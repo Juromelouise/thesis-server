@@ -7,7 +7,6 @@ const FormData = require("form-data");
 const fs = require("fs").promises;
 const path = require("path");
 const { pushNotification } = require("../utils/Notification");
-const { title } = require("process");
 
 const ensureTempDirectoryExists = async () => {
   const tempDir = path.join(__dirname, "../temp");
