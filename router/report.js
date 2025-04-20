@@ -1,6 +1,5 @@
 const router = require("express").Router();
 const upload = require("../utils/multer");
-const { imageExtract } = require("../service/tesseract");
 const { translator } = require("../service/translator");
 const { classifyReport } = require("../service/classifier");
 const {
@@ -31,7 +30,6 @@ const {
 } = require("../controller/obsrepController");
 
 //POST
-router.post("/extract/text", upload.single("imageReport"), imageExtract);
 router.post(
   "/post/report",
   upload.array("images"),

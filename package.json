@@ -15,8 +15,6 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@huggingface/transformers": "^3.0.0-alpha.17",
-    "@vercel/node": "^5.1.0",
     "axios": "^1.8.1",
     "bcrypt": "^5.1.1",
     "cloudinary": "^2.4.0",
@@ -33,9 +31,9 @@
     "mongoose-delete": "^1.0.2",
     "multer": "^1.4.5-lts.1",
     "natural": "^8.0.1",
+    "node-geocoder": "^4.4.1",
     "nodemon": "^3.1.4",
     "open-google-translator": "^1.0.5",
-    "tesseract.js": "^5.1.1",
     "validator": "^13.12.0"
   }
 }

@@ -7,6 +7,7 @@ const FormData = require("form-data");
 const fs = require("fs").promises;
 const path = require("path");
 const { pushNotification } = require("../utils/Notification");
+const { geocodeFomatter } = require("../service/geocoder");
 
 const ensureTempDirectoryExists = async () => {
   const tempDir = path.join(__dirname, "../temp");
@@ -65,13 +66,32 @@ exports.createReport = async (req, res) => {
     const reporter = req.user.id;
     req.body.original = req.body.description.original;
     req.body.description = req.body.description.translation;
-    const { location, description, original, plateNumber, violations, postIt } =
+    const { location, description, original, plateNumber, violations, postIt, geocodeData } =
       req.body;
 
     const blurredImages = await blurImages(req.files);
 
     const images = await uploadMultiple(blurredImages, "ReportImages/Blurred");
     const imagesAdmin = await uploadMultiple(req.files, "ReportImages");
+
+    let geocode = {}
+
+    const parsedGeocode = JSON.parse(geocodeData);
+    if(!parsedGeocode) {
+      geocodeCoor = await geocodeFomatter(location);
+      if (geocodeCoor) {
+         geocode = {
+          latitude: geocodeCoor[0].latitude,
+          longitude: geocodeCoor[0].longitude,
+        }
+      } else {
+         geocode = {
+          latitude: null,
+          longitude: null,
+        }
+      }
+    }
+    console.log("geocode", geocode);
 
     const report = await Report.create({
       location,
@@ -81,6 +101,7 @@ exports.createReport = async (req, res) => {
       original,
       reporter,
       postIt,
+      geocode,
       plateNumber: null,
     });
 
