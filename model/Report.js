@@ -107,11 +107,25 @@ reportSchema.methods.remove = async function (next) {
       { $pull: { violations: { report: this._id } } }
     );
     await this.delete({ _id: this._id });
-    // next();
     return;
   } catch (err) {
-    // next(err);
     return err;
+  }
+};
+
+reportSchema.statics.getGroupedCoordinates = async function () {
+  try {
+    const reports = await this.find({
+      "geocode.latitude": { $ne: null },
+      "geocode.longitude": { $ne: null },
+    }).select("geocode -_id");
+
+    return reports.map((report) => ({
+      lat: report.geocode.latitude,
+      lng: report.geocode.longitude,
+    }));
+  } catch (err) {
+    throw new Error("Error fetching grouped coordinates: " + err.message);
   }
 };
 
