@@ -10,6 +10,7 @@ const announce = require("./router/announcement");
 const report = require("./router/report");
 const plateNumber = require("./router/plateNumber");
 const maps = require("./router/maps");
+const comment = require("./router/comment")
 
 app.use(cors());
 app.use(express.json({ limit: "100mb" }));
@@ -32,5 +33,6 @@ app.use("/announce", announce);
 app.use("/report", report);
 app.use("/plate", plateNumber);
 app.use("/map", maps);
+app.use("/comment", comment);
 
 module.exports = app;
