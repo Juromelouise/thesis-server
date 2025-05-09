@@ -69,9 +69,9 @@ exports.createReport = async (req, res) => {
     const { location, description, original, plateNumber, violations, postIt, geocodeData } =
       req.body;
 
-    // const blurredImages = await blurImages(req.files);
+    const blurredImages = await blurImages(req.files);
 
-    // const images = await uploadMultiple(blurredImages, "ReportImages/Blurred");
+    const images = await uploadMultiple(blurredImages, "ReportImages/Blurred");
     const imagesAdmin = await uploadMultiple(req.files, "ReportImages");
 
     let geocode = {}
@@ -96,7 +96,7 @@ exports.createReport = async (req, res) => {
     const report = await Report.create({
       location,
       description,
-      // images,
+      images,
       imagesAdmin,
       original,
       reporter,
@@ -165,8 +165,8 @@ exports.updateReport = async (req, res) => {
     let images = [];
     let imagesAdmin = [];
     if (req.files?.length > 0) {
-      // const blurredImages = await blurImages(req.files);
-      // images = await uploadMultiple(blurredImages, "ReportImages");
+      const blurredImages = await blurImages(req.files);
+      images = await uploadMultiple(blurredImages, "ReportImages");
       imagesAdmin = await uploadMultiple(req.files, "ReportImages");
     }
 
@@ -190,7 +190,7 @@ exports.updateReport = async (req, res) => {
     report.location = location;
     report.description = description;
     report.original = original;
-    // report.images = images;
+    report.images = images;
     report.imagesAdmin = imagesAdmin;
     report.postIt = postIt;
 

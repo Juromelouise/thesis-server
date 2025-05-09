@@ -5,6 +5,8 @@ exports.addCommentToReport = async (req, res) => {
   try {
     const { id } = req.params;
     const { text } = req.body;
+    console.log("Received text:", text);
+    console.log("Received report ID:", id);
 
     const comment = new Comment({
       content: text,
@@ -23,6 +25,7 @@ exports.addCommentToReport = async (req, res) => {
 
     res.status(201).json(comment);
   } catch (error) {
+    console.error("Error adding comment:", error);
     res.status(500).json({ error: error.message });
   }
 };
