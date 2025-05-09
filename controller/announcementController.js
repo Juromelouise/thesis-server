@@ -1,5 +1,7 @@
 const Announcement = require("../model/Announcement");
 const { uploadMultiple } = require("../utils/cloudinaryUploader");
+const User = require("../model/User");
+const { pushNotification } = require("../utils/Notification");
 
 exports.createAnnouncement = async (req, res) => {
   try {
@@ -11,7 +13,21 @@ exports.createAnnouncement = async (req, res) => {
       picture,
     });
     const data = await announcement.save();
-    console.log(data);
+
+    const users = await User.find({ pushToken: { $ne: null } });
+
+    console.log(users);
+
+      const notificationData = {
+      title: data.title,
+      message: data.description,
+      data: { id: data._id },
+    };
+
+    for (const user of users) {
+      await pushNotification(notificationData, user.pushToken);
+    }
+    
     res.status(200).json({ message: "Announcement created successfully" });
   } catch (error) {
     console.log(error);
