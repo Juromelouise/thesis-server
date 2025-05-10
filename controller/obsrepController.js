@@ -30,14 +30,25 @@ exports.getData = async (req, res) => {
 exports.getAllData = async (req, res) => {
   try {
     const { page = 1, limit = 10 } = req.query;
-    const reports = await Report.find({postIt: true})
+    const reports = await Report.find({ postIt: true, status: "Approved" })
       .skip((page - 1) * limit)
       .limit(Number(limit));
-    const obstructions = await Obstruction.find()
+      
+      const filteredReports = reports.map((report) => {
+      const reportObject = report.toObject(); 
+      delete reportObject.plateNumber; 
+      return reportObject;
+    });
+
+    console.log(filteredReports);
+    const obstructions = await Obstruction.find({
+      postIt: true,
+      status: "Approved",
+    })
       .skip((page - 1) * limit)
       .limit(Number(limit));
 
-    const data = [...reports, ...obstructions];
+    const data = [...filteredReports, ...obstructions];
     res.status(200).json({ data: data });
   } catch (e) {
     console.log(e.message);
@@ -107,7 +118,10 @@ exports.updateStatusResolved = async (req, res) => {
     const images = await uploadMultiple(req.files, "ConfirmationImages");
 
     // Update the status of the reports to "Resolved"
-    await Report.updateMany({ _id: { $in: reportId } }, { status: status, confirmationImages: images });
+    await Report.updateMany(
+      { _id: { $in: reportId } },
+      { status: status, confirmationImages: images }
+    );
 
     await PlateNumber.deleteById(plateId);
 
