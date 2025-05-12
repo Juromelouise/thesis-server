@@ -1,8 +1,11 @@
 // filepath: c:\Thesis\System\backend\service\translator.js
 const { Translate } = require("@google-cloud/translate").v2;
+require("dotenv").config();
 
 exports.translator = async (req, res, next) => {
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+
+  console.log("API Key:", apiKey);
 
 // Initialize the Translate client with the API key
 const translate = new Translate({ key: apiKey });
