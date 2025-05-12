@@ -4,79 +4,99 @@ const classifier = new natural.BayesClassifier();
 exports.classifyReport = async (req, res, next) => {
   try {
     const violationReports = [
-      { description: "driveway", violation: "Blocking Driveway" },
-      { description: "no parking zone", violation: "No Parking Zone" },
-      { description: "fire hydrant", violation: "Fire Hydrant Parking" },
-      { description: "sidewalk", violation: "Sidewalk Parking" },
+      { description: "overnight", violation: "Overnight Parking" },
+      { description: "24 hours", violation: "Overnight Parking" },
+      { description: "left overnight", violation: "Overnight Parking" },
+      { description: "same spot", violation: "Overnight Parking" },
+      { description: "dangerous", violation: "Hazard Parking" },
+      { description: "traffic hazard", violation: "Hazard Parking" },
+      { description: "corner view", violation: "Hazard Parking" },
+      { description: "lane block", violation: "Hazard Parking" },
+      { description: "blocking way", violation: "Illegal Parking" },
+      { description: "no parking", violation: "Illegal Parking" },
+      { description: "illegally parked", violation: "Illegal Parking" },
+      { description: "not allowed", violation: "Illegal Parking" },
+      { description: "towing area", violation: "Towing Zone" },
+      { description: "tow-away", violation: "Towing Zone" },
+      { description: "tow violation", violation: "Towing Zone" },
+      {
+        description: "loading zone",
+        violation: "Loading and Unloading Violation",
+      },
+      {
+        description: "unloading obstruction",
+        violation: "Loading and Unloading Violation",
+      },
+      {
+        description: "no loading",
+        violation: "Loading and Unloading Violation",
+      },
       { description: "crosswalk", violation: "Crosswalk Obstruction" },
-      { description: "loading zone", violation: "Loading Zone Violation" },
-      { description: "bus stop", violation: "Blocking Bus Stop" },
+      { description: "crosswalk block", violation: "Crosswalk Obstruction" },
+      { description: "intersection", violation: "Intersection Obstruction" },
+      { description: "fire station", violation: "Fire Station Obstruction" },
+      { description: "driveway", violation: "Blocking Driveway" },
+      { description: "vehicle path", violation: "Blocking Driveway" },
       {
-        description: "handicapped spot",
-        violation: "Unauthorized Parking in Handicapped Spot",
+        description: "school entrance",
+        violation: "School Entrance Obstruction",
       },
-      { description: "intersection", violation: "Parking Near Intersection" },
+      { description: "stop sign", violation: "Traffic Sign Obstruction" },
+      { description: "truck block", violation: "Improper Delivery Parking" },
       {
-        description: "railroad crossing",
-        violation: "Parking Near Railroad Crossing",
+        description: "PUV loading",
+        violation: "Unauthorized Loading/Unloading by PUV",
       },
-      { description: "curb", violation: "Parking Too Close to Curb" },
-      { description: "towed area", violation: "Parking in Towed Area" },
+      { description: "vendor", violation: "Sidewalk Vendor Violation" },
+      { description: "sidewalk park", violation: "Illegal Sidewalk Parking" },
+      { description: "garbage", violation: "Improper Garbage Disposal" },
       {
-        description: "vehicle obstruction",
-        violation: "Obstructing Other Vehicles",
+        description: "basketball hoop",
+        violation: "Unauthorized Court on Road",
       },
-      { description: "street corner", violation: "Parking at Street Corner" },
-      { description: "emergency lane", violation: "Parking in Emergency Lane" },
-      { description: "bicycle lane", violation: "Blocking Bicycle Lane" },
+      { description: "animal pen", violation: "Animal Pen Obstruction" },
+      {
+        description: "construction debris",
+        violation: "Construction Material Obstruction",
+      },
+      { description: "business sign", violation: "Business Sign Obstruction" },
+      {
+        description: "tricycle terminal",
+        violation: "Public Terminal Obstruction",
+      },
     ];
 
-    // Add violation descriptions to the classifier
+    // Train the classifier
     violationReports.forEach((report) => {
       classifier.addDocument(
         report.description.toLowerCase(),
         report.violation
       );
     });
-
     classifier.train();
 
-    const report = req.body.description.translation;
+     const reportText = req.body.description.translation.toLowerCase();
 
-    const descriptionTokens = report.toLowerCase().split(" ");
-    const detectedViolations = [];
+    // Get all classifications with probabilities
+    const classifications = classifier.getClassifications(reportText);
 
-    // Check for detected violations
-    violationReports.forEach((reportItem) => {
-      let found = false;
-      reportItem.description
-        .toLowerCase()
-        .split(" ")
-        .forEach((word) => {
-          if (descriptionTokens.includes(word)) {
-            found = true;
-          }
-        });
+    // Sort classifications by probability in descending order
+    const sortedClassifications = classifications.sort((a, b) => b.value - a.value);
 
-      if (found) {
-        detectedViolations.push(reportItem.violation);
-      }
-    });
+    // Convert probabilities to percentages
+    const totalProbability = sortedClassifications.reduce((sum, c) => sum + c.value, 0);
+    const classificationsWithPercentages = sortedClassifications.map((c) => ({
+      label: c.label,
+      percentage: (c.value / totalProbability) * 100,
+    }));
 
-    // Classify the report and store it in an array for potential multiple violations
-    const predictedViolations = [];
-    const predictedViolation = classifier.classify(report.toLowerCase());
+    // Include all violations above a certain percentage threshold
+    const percentageThreshold = 5; // Include violations with at least 5% probability
+    const predictedViolations = classificationsWithPercentages
+      .filter((c) => c.percentage >= percentageThreshold)
+      .map((c) => c.label);
 
-    // Check if the predicted violation is relevant
-    if (predictedViolation) {
-      predictedViolations.push(predictedViolation);
-    }
-
-    // Combine detected and predicted violations
-    const finalViolations = [
-      ...new Set([...detectedViolations, ...predictedViolations]),
-    ];
-    req.body.violations = finalViolations;
+    req.body.violations = predictedViolations;
     next();
   } catch (error) {
     console.error("Error classifying report:", error);

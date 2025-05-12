@@ -6,7 +6,7 @@ const { uploadMultiple } = require("../utils/cloudinaryUploader");
 exports.getData = async (req, res) => {
   try {
     const reports = await Report.find({ reporter: req.user.id }).select(
-      "createdAt location description"
+      "createdAt location description original"
     );
     const obstructions = await Obstruction.find({
       reporter: req.user.id,
@@ -16,6 +16,7 @@ exports.getData = async (req, res) => {
       createdAt: item.createdAt,
       location: item.location,
       description: item.description,
+      original: item.original,
       _id: item._id,
       plateNumber: item.plateNumber ? true : false,
     }));
@@ -40,7 +41,6 @@ exports.getAllData = async (req, res) => {
       return reportObject;
     });
 
-    console.log(filteredReports);
     const obstructions = await Obstruction.find({
       postIt: true,
       status: "Approved",

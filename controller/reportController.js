@@ -62,6 +62,8 @@ const blurImages = async (files) => {
 
 exports.createReport = async (req, res) => {
   try {
+    console.log("req.body", req.body.description.original);
+    console.log("req.body", req.body.description.translation);
     let plate;
     const reporter = req.user.id;
     req.body.original = req.body.description.original;
@@ -332,7 +334,7 @@ exports.updateReportStatus = async (req, res, next) => {
         {
           status: req.body.status,
           reason: req.body.reason,
-          // editableStatus: editableStatus.editableStatus + 1,
+          editableStatus: editableStatus.editableStatus + 1,
         },
         { new: true }
       );

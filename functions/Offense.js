@@ -14,40 +14,50 @@ exports.offenseUpdater = async (plateNumberId, status) => {
       if (!plateNumber.checkOffense) {
         let offense;
 
+        const calculateFine = (count) => {
+          if (count === 1) return 300;
+          if (count === 2) return 500;
+          if (count === 3) return 700;
+          return 1000; // 4th offense and beyond
+        };
+
         // If there's an existing (soft-deleted) offense, update it
         if (existingOffense && existingOffense.length > 0 && existingOffense[0].offense) {
+          const currentCount = existingOffense[0].offense.offense + 1;
+          const fine = calculateFine(currentCount);
+
           offense = await Offense.findByIdAndUpdate(
             existingOffense[0].offense._id,
             {
-              $inc: { offense: 1, fine: 500 },
+              $inc: { offense: 1 },
+              $set: { fine: fine }
             },
             { new: true }
           );
 
-          // Update the PlateNumber to reference the restored offense
           await PlateNumber.findByIdAndUpdate(plateNumberId, {
             offense: offense._id,
             checkOffense: true,
           });
 
-          console.log(`Existing offense restored and updated: ${offense}`);
+          console.log(`Existing offense updated: ${offense}`);
         } else {
-          // If no existing offense, follow the original logic
+          // If no existing offense, create a new one
           if (!plateNumber.offense) {
-            // Create a new offense document
+            const fine = calculateFine(1);
+
             offense = await Offense.create({
               offense: 1,
-              fine: 500,
+              fine: fine,
             });
 
-            // Update the PlateNumber to reference the new offense document
             await PlateNumber.findByIdAndUpdate(plateNumberId, {
               offense: offense._id,
               checkOffense: true,
             });
 
-            console.log(`New offense created and linked: ${offense}`);
-          } 
+            console.log(`New offense created: ${offense}`);
+          }
         }
 
         return true;
@@ -56,8 +66,8 @@ exports.offenseUpdater = async (plateNumberId, status) => {
         return true;
       }
     } else if (status === "Disapproved") {
-      const hasApprovedReports = plateNumber.violations.some(
-        (violation) => violation.report && violation.report.status === "Approved"
+      const hasApprovedReports = plateNumber.violations?.some(
+        (violation) => violation.report?.status === "Approved"
       );
 
       if (!hasApprovedReports) {
@@ -72,11 +82,3 @@ exports.offenseUpdater = async (plateNumberId, status) => {
     return error;
   }
 };
-
-exports.offenseResolved = async (plateNumberId) => {
-    try {
-        
-    } catch (error) {
-        
-    }
-}

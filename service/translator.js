@@ -1,16 +1,23 @@
-const translator = require("open-google-translator");
+const { Translate } = require("@google-cloud/translate").v2;
+const projectId = "thesis-434709";
+
+const translate = new Translate();
 
 exports.translator = async (req, res, next) => {
   try {
-    const data = await translator.TranslateLanguageData({
-      listOfWordsToTranslate: [req.body.description],
-      fromLanguage: "tl",
-      toLanguage: "en",
+    let description = req.body.description;
+    const [translation] = await translate.translate(req.body.description, {
+      from: "tl", // Source language (Tagalog)
+      to: "en", // Target language (English)
     });
 
-    // console.log(data[0].translation);
+    // Log the translation for debugging
 
-    req.body.description = data[0];
+    // Update the request body with the translated description  
+    req.body.description = {};
+    req.body.description.translation = translation;
+    req.body.description.original = description;
+    console.log("Translated text:", req.body.description);
     next();
   } catch (error) {
     console.error("Error translating text:", error);
