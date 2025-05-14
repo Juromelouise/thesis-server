@@ -115,3 +115,49 @@ exports.updatePushToken = async (req, res) => {
     res.status(500).json({ message: "Error updating push token" });
   }
 };
+
+exports.getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find();
+    if (!users) {
+      return res.status(404).json({ message: "No users found" });
+    }
+    const data = users.filter((user) => user.role === "user");
+
+    // console.log("All users: ", data);
+
+    res.status(200).json({
+      success: true,
+      users: data,
+    });
+  } catch (e) {
+    console.error("Error in Getting all users: ", e);
+    res.status(500).json({ message: "Error in Getting all users" });
+  }
+};
+
+exports.banUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    await User.delete({ _id: userId });
+    const user = await User.find();
+    console.log("User banned successfully: ", user);
+    res.status(200).json({ message: "User banned successfully", user });
+  } catch (e) {
+    console.error("Error in Banning user: ", e);
+    res.status(500).json({ message: "Error in Banning user" });
+  }
+};
+
+exports.unbanUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const user = await User.restore({ _id: userId });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+  } catch (e) {
+    console.error("Error in Unbanning user: ", e);
+    res.status(500).json({ message: "Error in Unbanning user" });
+  }
+};

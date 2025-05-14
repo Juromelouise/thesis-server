@@ -4,65 +4,33 @@ const classifier = new natural.BayesClassifier();
 exports.classifyReport = async (req, res, next) => {
   try {
     const violationReports = [
-      { description: "overnight", violation: "Overnight Parking" },
-      { description: "24 hours", violation: "Overnight Parking" },
-      { description: "left overnight", violation: "Overnight Parking" },
-      { description: "same spot", violation: "Overnight Parking" },
-      { description: "dangerous", violation: "Hazard Parking" },
-      { description: "traffic hazard", violation: "Hazard Parking" },
-      { description: "corner view", violation: "Hazard Parking" },
-      { description: "lane block", violation: "Hazard Parking" },
-      { description: "blocking way", violation: "Illegal Parking" },
-      { description: "no parking", violation: "Illegal Parking" },
-      { description: "illegally parked", violation: "Illegal Parking" },
-      { description: "not allowed", violation: "Illegal Parking" },
-      { description: "towing area", violation: "Towing Zone" },
-      { description: "tow-away", violation: "Towing Zone" },
-      { description: "tow violation", violation: "Towing Zone" },
       {
-        description: "loading zone",
-        violation: "Loading and Unloading Violation",
+        description: "car has park 24 hours",
+        violation: "Overnight parking",
       },
       {
-        description: "unloading obstruction",
-        violation: "Loading and Unloading Violation",
+        description:
+          "a vehicle being parked in a location that creates a danger or obstruction, often violating traffic rules.",
+        violation: "Hazard parking",
       },
       {
-        description: "no loading",
-        violation: "Loading and Unloading Violation",
+        description: "parking a vehicle in a restricted or prohibited area.",
+        violation: "Illegal parking",
       },
-      { description: "crosswalk", violation: "Crosswalk Obstruction" },
-      { description: "crosswalk block", violation: "Crosswalk Obstruction" },
-      { description: "intersection", violation: "Intersection Obstruction" },
-      { description: "fire station", violation: "Fire Station Obstruction" },
-      { description: "driveway", violation: "Blocking Driveway" },
-      { description: "vehicle path", violation: "Blocking Driveway" },
       {
-        description: "school entrance",
-        violation: "School Entrance Obstruction",
+        description:
+          "an area where vehicles are not allowed to park, and violators are subject to being towed.",
+        violation: "Towing Zone",
       },
-      { description: "stop sign", violation: "Traffic Sign Obstruction" },
-      { description: "truck block", violation: "Improper Delivery Parking" },
       {
-        description: "PUV loading",
-        violation: "Unauthorized Loading/Unloading by PUV",
+        description:
+          "Stopping/Parking that can cause traffic conflict\n\nLoading, unloading, stopping, or parking is prohibited in certain areas unless necessary to avoid traffic conflicts or when directed by authorities. These restricted areas include crosswalks or sidewalks; within 6 meters of an intersection or street corner; within 30 meters of any signalized intersection; within 6 meters of fire station driveways or directly across from them; within 2 meters of any public or private driveway; within 3 meters of a school gate or entrance; and in front of any traffic sign or device where visibility may be obstructed. For delivery vehicles, if the loading or unloading of goods will take more than two (2) minutes, it must be done within the establishment’s own compound. In cases where no parking space is available within the premises, loading and unloading is only allowed during specific time intervals: 9:00 AM to 11:00 AM, 1:00 PM to 3:00 PM, and 8:00 PM to 5:00 AM the following day. Public utility vehicles are also not allowed to stop or park for loading and unloading outside designated zones, and it is unlawful for any driver to park and wait for passengers unless in emergency situations.",
+        violation: "Loading and Unloading",
       },
-      { description: "vendor", violation: "Sidewalk Vendor Violation" },
-      { description: "sidewalk park", violation: "Illegal Sidewalk Parking" },
-      { description: "garbage", violation: "Improper Garbage Disposal" },
       {
-        description: "basketball hoop",
-        violation: "Unauthorized Court on Road",
-      },
-      { description: "animal pen", violation: "Animal Pen Obstruction" },
-      {
-        description: "construction debris",
-        violation: "Construction Material Obstruction",
-      },
-      { description: "business sign", violation: "Business Sign Obstruction" },
-      {
-        description: "tricycle terminal",
-        violation: "Public Terminal Obstruction",
+        description:
+          "Blocking or misusing sidewalks for unauthorized activities.\n\nillegal use of Streets and Sidewalks -\nVendors- selling of foods in sidewalks, Religious Activities- conducting a religious activities in street or side walks, Household Chores- doing washing cloths or hanging cloths in street or side walks, Vehicles Parked- illegally parking in street, Dump Garbage's- Garbage left on the side of the road or sidewalks., Basketball/Volleyball Courts and alike- illegal setting up a basketball court in street , Animal Pens/Cages – Animal enclosures blocking roads or sidewalks.\nConstruction Materials – Building items obstructing public paths.\nBusiness Signboards – Signs placed on walkways causing obstruction.\nPublic Terminals – Transport spots occupying public space.",
+        violation: "Illegal Sidewalk Use",
       },
     ];
 
@@ -75,23 +43,29 @@ exports.classifyReport = async (req, res, next) => {
     });
     classifier.train();
 
-     const reportText = req.body.description.translation.toLowerCase();
+    // req.body.description.translation = 
+    const reportText = req.body.description.translation.toLowerCase();
 
     // Get all classifications with probabilities
-    const classifications = classifier.getClassifications(reportText);
+    const classifications = classifier.getClassifications("the car is parked where it  and blocking the sidewalk");
 
     // Sort classifications by probability in descending order
-    const sortedClassifications = classifications.sort((a, b) => b.value - a.value);
+    const sortedClassifications = classifications.sort(
+      (a, b) => b.value - a.value
+    );
 
     // Convert probabilities to percentages
-    const totalProbability = sortedClassifications.reduce((sum, c) => sum + c.value, 0);
+    const totalProbability = sortedClassifications.reduce(
+      (sum, c) => sum + c.value,
+      0
+    );
     const classificationsWithPercentages = sortedClassifications.map((c) => ({
       label: c.label,
       percentage: (c.value / totalProbability) * 100,
     }));
 
     // Include all violations above a certain percentage threshold
-    const percentageThreshold = 5; // Include violations with at least 5% probability
+    const percentageThreshold = 15; // Include violations with at least 5% probability
     const predictedViolations = classificationsWithPercentages
       .filter((c) => c.percentage >= percentageThreshold)
       .map((c) => c.label);
