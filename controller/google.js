@@ -51,6 +51,13 @@ exports.google = async (req, res, next) => {
 
     const loginUser = await User.findOne({ email });
 
+    if (!loginUser) {
+      return res.status(400).json({
+        status: false,
+        message: "User not found",
+      });
+    }
+
     if (loginUser) {
       sendToken(loginUser, 200, res);
     } else {

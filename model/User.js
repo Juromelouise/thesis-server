@@ -93,6 +93,16 @@ userSchema.methods.getResetPasswordToken = function () {
   return resetToken;
 };
 
+userSchema.methods.banUser = async function () {
+  await this.delete({ _id: this._id });
+  return;
+};
+
+userSchema.methods.unbanUser = async function () {
+  await this.restore({ _id: this._id });
+  return;
+};
+
 userSchema.plugin(populate);
 userSchema.plugin(mongooseDelete, { overrideMethods: "all" });
 

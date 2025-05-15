@@ -118,13 +118,11 @@ exports.updatePushToken = async (req, res) => {
 
 exports.getAllUsers = async (req, res) => {
   try {
-    const users = await User.find();
+    const users = await User.findWithDeleted();
     if (!users) {
       return res.status(404).json({ message: "No users found" });
     }
     const data = users.filter((user) => user.role === "user");
-
-    // console.log("All users: ", data);
 
     res.status(200).json({
       success: true,
@@ -138,11 +136,14 @@ exports.getAllUsers = async (req, res) => {
 
 exports.banUser = async (req, res) => {
   try {
-    const { userId } = req.params;
-    await User.delete({ _id: userId });
-    const user = await User.find();
-    console.log("User banned successfully: ", user);
-    res.status(200).json({ message: "User banned successfully", user });
+    const { id } = req.params;
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    await user.banUser();
+    const data = await User.findWithDeleted();
+    res.status(200).json({ message: "User banned successfully", user: data });
   } catch (e) {
     console.error("Error in Banning user: ", e);
     res.status(500).json({ message: "Error in Banning user" });
@@ -151,11 +152,14 @@ exports.banUser = async (req, res) => {
 
 exports.unbanUser = async (req, res) => {
   try {
-    const { userId } = req.params;
-    const user = await User.restore({ _id: userId });
+    const { id } = req.params;
+    const user = await User.findOneWithDeleted({ _id: id });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
+    await user.unbanUser();
+    const data = await User.findWithDeleted();
+    res.status(200).json({ message: "User unbanned successfully", user: data });
   } catch (e) {
     console.error("Error in Unbanning user: ", e);
     res.status(500).json({ message: "Error in Unbanning user" });
