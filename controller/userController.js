@@ -2,6 +2,7 @@ const User = require("../model/User");
 const sendToken = require("../utils/jwtToken");
 const { uploadSingle } = require("../utils/cloudinaryUploader");
 const path = require("path");
+const { email } = require("../utils/Email");
 
 exports.registerUser = async (req, res) => {
   try {
@@ -143,6 +144,7 @@ exports.banUser = async (req, res) => {
     }
     await user.banUser();
     const data = await User.findWithDeleted();
+    await email()
     res.status(200).json({ message: "User banned successfully", user: data });
   } catch (e) {
     console.error("Error in Banning user: ", e);
