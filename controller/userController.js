@@ -3,6 +3,8 @@ const sendToken = require("../utils/jwtToken");
 const { uploadSingle } = require("../utils/cloudinaryUploader");
 const path = require("path");
 const { email } = require("../utils/Email");
+const Ban = require("../model/Ban");
+const { banningChoice } = require("../utils/banningChoice");
 
 exports.registerUser = async (req, res) => {
   try {
@@ -137,8 +139,6 @@ exports.getAllUsers = async (req, res) => {
 
 exports.banUser = async (req, res) => {
   try {
-    console.log(req.file);
-    console.log(req.body);
     const { id } = req.params;
     const user = await User.findById(id);
     if (!user) {
@@ -146,28 +146,34 @@ exports.banUser = async (req, res) => {
     }
     await user.banUser();
     const data = await User.findWithDeleted();
+    console.log(req.body.endData);
+    await Ban.create({
+      user: user._id,
+      reason: req.body.reason,
+      endDate: req.body.endDate,
+    });
+
+    let fileUrl = null;
+    let attachment = null;
+    if (req.file) {
+      fileUrl = req.file.originalname;
+      attachment = req.file;
+    }
+
+    const { text, html } = banningChoice(
+      req.body.reason,
+      fileUrl,
+      req.body.endDate
+    );
     const emailData = {
       to: user.email,
       subject: "Account Banned",
-      text: `Your account has been banned. Please contat csupport for more information.`,
-      html: `
-      <div style="max-width:480px;margin:40px auto;padding:32px 24px;background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,0.08);font-family:'Segoe UI',Arial,sans-serif;">
-        <div style="text-align:center;">
-        <svg width="64" height="64" fill="none" viewBox="0 0 64 64">
-          <circle cx="32" cy="32" r="32" fill="#ff4d4f"/>
-          <path d="M20 20l24 24M44 20L20 44" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
-        </svg>
-        <h2 style="color:#ff4d4f;margin:24px 0 8px;font-size:2rem;font-weight:700;">Account Banned</h2>
-        <p style="color:#333;font-size:1.1rem;line-height:1.6;margin-bottom:24px;">
-          Your account has been <span style="color:#ff4d4f;font-weight:600;">banned</span>.<br>
-          Please contact our support team for more information or to appeal this decision.
-        </p>
-        <a href="mailto:juromefernando@example.com" style="display:inline-block;padding:12px 28px;background:#ff4d4f;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;box-shadow:0 2px 8px rgba(255,77,79,0.12);transition:background 0.2s;">Contact Support</a>
-        </div>
-      </div>
-      `,
+      text,
+      html,
+      ...(attachment && { attachment }),
     };
-    await email(emailData)
+
+    await email(emailData);
     res.status(200).json({ message: "User banned successfully", user: data });
   } catch (e) {
     console.error("Error in Banning user: ", e);

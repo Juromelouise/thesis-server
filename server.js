@@ -21,6 +21,7 @@ const connectDatabase = () => {
 };
 
 connectDatabase();
+require("./utils/unbanScheduler");
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,

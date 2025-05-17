@@ -1,0 +1,25 @@
+const cron = require("node-cron");
+const Ban = require("../model/Ban");
+const User = require("../model/User");
+
+cron.schedule("* * * * *", async () => {
+  try {
+    console.log("Running unban scheduler...");
+    const expiredBans = await Ban.find({
+      endDate: { $ne: null, $lte: new Date() },
+    });
+
+    const userIds = expiredBans.map((ban) => ban.user.toString());
+    const users = await User.findWithDeleted({
+      _id: { $in: userIds },
+    });
+
+    for (const user of users) {
+      if (user) {
+        await user.unbanUser();
+      }
+    }
+  } catch (err) {
+    console.error("Error in unban scheduler:", err);
+  }
+});

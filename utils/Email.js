@@ -12,13 +12,24 @@ exports.email = async (data) => {
       },
     });
 
-    const info = await transporter.sendMail({
+    const mailOptions = {
       from: '"Jurome Louise De Jesus" <juromefernando@gmail.com>',
       to: data.to,
       subject: data.subject,
       text: data.text,
       html: data.html,
-    });
+    };
+
+    if (data.attachment) {
+      mailOptions.attachments = [
+        {
+          filename: data.attachment.originalname,
+          path: data.attachment.path,
+        },
+      ];
+    }
+
+    await transporter.sendMail(mailOptions);
 
   } catch (error) {
     console.error("Error sending email:", error);

@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 const populate = require("mongoose-autopopulate");
 
 const banSchema = new mongoose.Schema({
@@ -6,7 +6,6 @@ const banSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     required: true,
-    autopopulate: true,
   },
   reason: {
     type: String,
@@ -22,7 +21,5 @@ const banSchema = new mongoose.Schema({
     default: null,
   },
 });
-
-banSchema.plugin(populate);
 
 module.exports = mongoose.model("Ban", banSchema);
