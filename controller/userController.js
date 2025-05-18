@@ -40,11 +40,16 @@ exports.logout = async (req, res, next) => {
 };
 
 exports.profile = async (req, res) => {
-  const user = await User.findById(req.user.id);
-  res.status(200).json({
-    success: true,
-    user,
-  });
+  try {
+    const user = await User.findById(req.user.id);
+    res.status(200).json({
+      success: true,
+      user,
+    });
+  } catch (e) {
+    console.error("Error in Getting user: ", e);
+    res.status(500).json({ message: "Error in Getting user" });
+  }
 };
 
 exports.updateProfile = async (req, res) => {
