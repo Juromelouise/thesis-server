@@ -23,7 +23,7 @@ exports.isAuthenticated = async (req, res, next) => {
 };
 
 exports.Admin = async (req, res, next) => {
-  if (req.user.role !== "admin") {
+  if (req.user.role !== "admin" || req.user.role !== "superadmin") {
     return res.status(403).json({ message: "Access denied" });
   }
 
