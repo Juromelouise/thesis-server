@@ -11,6 +11,7 @@ const {
   getAllUsers,
   unbanUser,
   banUser,
+  changeRole,
 } = require("../controller/userController");
 
 const { isAuthenticated } = require("../middleware/auth");
@@ -34,5 +35,6 @@ router.put(
   banUser
 );
 router.put("/unban-user/:id", isAuthenticated, unbanUser);
+router.put("/change-role/:id", isAuthenticated, changeRole);
 
 module.exports = router;

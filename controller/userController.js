@@ -126,15 +126,19 @@ exports.updatePushToken = async (req, res) => {
 
 exports.getAllUsers = async (req, res) => {
   try {
-    const users = await User.findWithDeleted();
+    const users = await User.findWithDeleted({
+      _id: { $ne: req.user._id },
+      firstName: { $ne: "Admin" },
+      lastName: { $ne: "admin" },
+    });
+    // const users = await User.findWithDeleted();
     if (!users) {
       return res.status(404).json({ message: "No users found" });
     }
-    const data = users.filter((user) => user.role === "user");
 
     res.status(200).json({
       success: true,
-      users: data,
+      users: users,
     });
   } catch (e) {
     console.error("Error in Getting all users: ", e);
@@ -199,5 +203,24 @@ exports.unbanUser = async (req, res) => {
   } catch (e) {
     console.error("Error in Unbanning user: ", e);
     res.status(500).json({ message: "Error in Unbanning user" });
+  }
+};
+
+exports.changeRole = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findOneWithDeleted({ _id: id });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    user.role = req.body.role;
+    await user.save();
+    const data = await User.findWithDeleted();
+    res
+      .status(200)
+      .json({ message: "User role changed successfully", users: data });
+  } catch (e) {
+    console.error("Error in Changing user role: ", e);
+    res.status(500).json({ message: "Error in Changing user role" });
   }
 };
