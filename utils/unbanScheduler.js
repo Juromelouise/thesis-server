@@ -4,7 +4,6 @@ const User = require("../model/User");
 
 cron.schedule("* * * * *", async () => {
   try {
-    console.log("Running unban scheduler...");
     const expiredBans = await Ban.find({
       endDate: { $ne: null, $lte: new Date() },
     });

@@ -13,11 +13,20 @@ exports.mobile = async (req, res) => {
   const body = { firstName, lastName, email, avatar };
 
   try {
-    const loginUser = await User.findOne({ email });
+    const user = await User.findOneWithDeleted({ email });
+    const loginUser = await User.findOne({ email: email });
+    console.log(user)
 
-    if (loginUser) {
+    if (user.deleted === false) {
+      console.log("naglologin");
       sendToken(loginUser, 200, res);
-    } else {
+    } else if (user.deleted === true) {
+      res.status(400).json({
+        status: false,
+        message: "This account is Banned",
+      });
+    } else if (!user) {
+      console.log("nagawa user");
       const randomPassword = Math.random().toString(36).slice(-8);
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(randomPassword, salt);
@@ -49,7 +58,7 @@ exports.google = async (req, res, next) => {
 
     const body = { firstName, email };
 
-    const loginUser = await User.findOne({ email });
+    const loginUser = await User.find({ email: email });
 
     if (!loginUser) {
       return res.status(400).json({
