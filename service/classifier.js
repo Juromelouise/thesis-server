@@ -24,7 +24,7 @@ exports.classifyReport = async (req, res, next) => {
       },
       {
         description:
-          "Stopping/Parking that can cause traffic conflict\n\nLoading, unloading, stopping, or parking is prohibited in certain areas unless necessary to avoid traffic conflicts or when directed by authorities. These restricted areas include crosswalks or sidewalks; within 6 meters of an intersection or street corner; within 30 meters of any signalized intersection; within 6 meters of fire station driveways or directly across from them; within 2 meters of any public or private driveway; within 3 meters of a school gate or entrance; and in front of any traffic sign or device where visibility may be obstructed. For delivery vehicles, if the loading or unloading of goods will take more than two (2) minutes, it must be done within the establishment’s own compound. In cases where no parking space is available within the premises, loading and unloading is only allowed during specific time intervals: 9:00 AM to 11:00 AM, 1:00 PM to 3:00 PM, and 8:00 PM to 5:00 AM the following day. Public utility vehicles are also not allowed to stop or park for loading and unloading outside designated zones, and it is unlawful for any driver to park and wait for passengers unless in emergency situations.",
+          "Stopping or Parking that can cause traffic conflict, Loading, unloading, stopping, or parking is prohibited in certain areas unless necessary to avoid traffic conflicts or when directed by authorities. These restricted areas include crosswalks or sidewalks; within 6 meters of an intersection or street corner; within 30 meters of any signalized intersection; within 6 meters of fire station driveways or directly across from them; within 2 meters of any public or private driveway; within 3 meters of a school gate or entrance; and in front of any traffic sign or device where visibility may be obstructed. For delivery vehicles, if the loading or unloading of goods will take more than two (2) minutes, it must be done within the establishment’s own compound. In cases where no parking space is available within the premises, loading and unloading is only allowed during specific time intervals: 9:00 AM to 11:00 AM, 1:00 PM to 3:00 PM, and 8:00 PM to 5:00 AM the following day. Public utility vehicles are also not allowed to stop or park for loading and unloading outside designated zones, and it is unlawful for any driver to park and wait for passengers unless in emergency situations.",
         violation: "Loading and Unloading",
       },
       {
@@ -55,6 +55,7 @@ exports.classifyReport = async (req, res, next) => {
     );
 
     // Convert probabilities to percentages
+    // Convert probabilities to percentages
     const totalProbability = sortedClassifications.reduce(
       (sum, c) => sum + c.value,
       0
@@ -63,13 +64,25 @@ exports.classifyReport = async (req, res, next) => {
       label: c.label,
       percentage: (c.value / totalProbability) * 100,
     }));
-
-    // Include all violations above a certain percentage threshold
-    const percentageThreshold = 15; // Include violations with at least 5% probability
-    const predictedViolations = classificationsWithPercentages
-      .filter((c) => c.percentage >= percentageThreshold)
-      .map((c) => c.label);
-
+    
+    // Compare the top two percentages
+    let predictedViolations = [];
+    if (classificationsWithPercentages.length > 1) {
+      const diff = classificationsWithPercentages[0].percentage - classificationsWithPercentages[1].percentage;
+      if (diff > 20) {
+        // If the top violation is much higher than the second, only include the top one
+        predictedViolations = [classificationsWithPercentages[0].label];
+      } else {
+        // Otherwise, include all with the same top percentage (in case of ties)
+        const topPercent = classificationsWithPercentages[0].percentage;
+        predictedViolations = classificationsWithPercentages
+          .filter(c => c.percentage === topPercent)
+          .map(c => c.label);
+      }
+    } else if (classificationsWithPercentages.length === 1) {
+      predictedViolations = [classificationsWithPercentages[0].label];
+    }
+    
     req.body.violations = predictedViolations;
     next();
   } catch (error) {

@@ -68,30 +68,43 @@ exports.createReport = async (req, res) => {
     const reporter = req.user.id;
     req.body.original = req.body.description.original;
     req.body.description = req.body.description.translation;
-    const { location, description, original, plateNumber, violations, postIt, geocodeData } =
-      req.body;
+    const {
+      location,
+      description,
+      original,
+      plateNumber,
+      violations,
+      postIt,
+      geocodeData,
+    } = req.body;
 
     const blurredImages = await blurImages(req.files);
 
     const images = await uploadMultiple(blurredImages, "ReportImages/Blurred");
     const imagesAdmin = await uploadMultiple(req.files, "ReportImages");
 
-    let geocode = {}
+    let geocode = {};
 
     const parsedGeocode = JSON.parse(geocodeData);
-    if(!parsedGeocode) {
+    console.log("parsedGeocode", parsedGeocode);
+    if (!parsedGeocode) {
       geocodeCoor = await geocodeFomatter(location);
       if (geocodeCoor) {
-         geocode = {
+        geocode = {
           latitude: geocodeCoor[0].latitude,
           longitude: geocodeCoor[0].longitude,
-        }
+        };
       } else {
-         geocode = {
+        geocode = {
           latitude: null,
           longitude: null,
-        }
+        };
       }
+    }else{
+      geocode = {
+        latitude: parsedGeocode.latitude,
+        longitude: parsedGeocode.longitude,
+      };
     }
     console.log("geocode", geocode);
 

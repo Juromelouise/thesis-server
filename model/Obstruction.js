@@ -14,6 +14,16 @@ const obstructionSchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
+   geocode: {
+    latitude: {
+      type: Number,
+      default: null,
+    },
+    longitude: {
+      type: Number,
+      default: null,
+    },
+  },
   description: {
     type: String,
     required: true,

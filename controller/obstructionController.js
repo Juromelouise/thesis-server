@@ -1,13 +1,38 @@
 const Obstruction = require("../model/Obstruction");
 const { uploadMultiple } = require("../utils/cloudinaryUploader");
+const { pushNotification } = require("../utils/Notification");
+const { geocodeFomatter } = require("../service/geocoder");
 
 exports.createObstruction = async (req, res) => {
   try {
     const reporter = req.user.id;
     req.body.original = req.body.description.original;
     req.body.description = req.body.description.translation;
-    const { location, description, original, violations } = req.body;
+    const { location, description, original, violations, geocodeData } = req.body;
     const images = await uploadMultiple(req.files, "ObstructionImages");
+
+       let geocode = {};
+    
+        const parsedGeocode = JSON.parse(geocodeData);
+        if (!parsedGeocode) {
+          geocodeCoor = await geocodeFomatter(location);
+          if (geocodeCoor) {
+            geocode = {
+              latitude: geocodeCoor[0].latitude,
+              longitude: geocodeCoor[0].longitude,
+            };
+          } else {
+            geocode = {
+              latitude: null,
+              longitude: null,
+            };
+          }
+        }else{
+          geocode = {
+            latitude: parsedGeocode.latitude,
+            longitude: parsedGeocode.longitude,
+          };
+        }
 
 
     const obstruction = await Obstruction.create({
@@ -16,6 +41,7 @@ exports.createObstruction = async (req, res) => {
       images,
       original,
       reporter,
+      geocode,
       violations,
     });
 
@@ -94,6 +120,7 @@ exports.editableStatusObs = async (req, res) => {
         req.params.id,
         {
           status: req.body.status,
+          reason: req.body.reason,
           editableStatus: editableStatus.editableStatus + 1,
         },
         { new: true }
