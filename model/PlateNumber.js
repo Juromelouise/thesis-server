@@ -57,6 +57,13 @@ plateNumberSchema.methods.remove = async function (next) {
   }
 };
 
+plateNumberSchema.pre("save", function (next) {
+  if (this.plateNumber) {
+    this.plateNumber = this.plateNumber.replace(/\s+/g, "");
+  }
+  next();
+});
+
 plateNumberSchema.plugin(populate);
 plateNumberSchema.plugin(mongooseDelete, { overrideMethods: "all" });
 

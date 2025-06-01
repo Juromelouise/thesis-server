@@ -16,6 +16,8 @@ exports.mobile = async (req, res) => {
     const user = await User.findOneWithDeleted({ email });
     const loginUser = await User.findOne({ email: email });
 
+    console.log(user);
+
     if (user.deleted === false) {
       sendToken(loginUser, 200, res);
     } else if (user.deleted === true) {
