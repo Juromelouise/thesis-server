@@ -31,7 +31,7 @@ exports.getData = async (req, res) => {
 exports.getAllData = async (req, res) => {
   try {
     const { page = 1, limit = 10 } = req.query;
-    const reports = await Report.find({ postIt: true, status: "Approved" })
+    const reports = await Report.find({ postIt: true })
       .skip((page - 1) * limit)
       .limit(Number(limit));
       
