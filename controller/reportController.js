@@ -61,9 +61,8 @@ const blurImages = async (files) => {
 };
 
 exports.createReport = async (req, res) => {
+  console.log("Creating report with body:", req.body);
   try {
-    console.log("req.body", req.body.description.original);
-    console.log("req.body", req.body.description.translation);
     let plate;
     const reporter = req.user.id;
     req.body.original = req.body.description.original;

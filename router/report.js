@@ -2,6 +2,7 @@ const router = require("express").Router();
 const upload = require("../utils/multer");
 const { translator } = require("../service/translator");
 const { classifyReport } = require("../service/classifier");
+const { ReportIdentier } = require("../functions/ReportIdentifier");
 const {
   createReport,
   updateReport,
@@ -9,7 +10,6 @@ const {
   getAllDataAdmin,
   getSingleReport,
   updateReportStatus,
-  // editableStatus,
 } = require("../controller/reportController");
 const { isAuthenticated, Admin } = require("../middleware/auth");
 const {
@@ -36,16 +36,17 @@ router.post(
   isAuthenticated,
   translator,
   classifyReport,
-  createReport
+  // createReport
+  ReportIdentier
 );
-router.post(
-  "/post/obstruction",
-  upload.array("images"),
-  isAuthenticated,
-  translator,
-  classifyReport,
-  createObstruction
-);
+// router.post(
+//   "/post/obstruction",
+//   upload.array("images"),
+//   isAuthenticated,
+//   translator,
+//   classifyReport,
+//   createObstruction
+// );
 //GET
 router.get("/fetch/all", isAuthenticated, getData);
 router.get("/fetch/all/reports", getAllData);
@@ -98,7 +99,7 @@ router.put(
   "/admin/report/status/:id",
   isAuthenticated,
   Admin,
-  updateReportStatus,
+  updateReportStatus
 );
 router.put(
   "/admin/obstruction/status/:id",

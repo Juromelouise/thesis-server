@@ -4,6 +4,7 @@ const { pushNotification } = require("../utils/Notification");
 const { geocodeFomatter } = require("../service/geocoder");
 
 exports.createObstruction = async (req, res) => {
+  console.log("Creating obstruction with body:", req.body);
   try {
     const reporter = req.user.id;
     req.body.original = req.body.description.original;
