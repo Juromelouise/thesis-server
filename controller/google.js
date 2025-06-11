@@ -50,7 +50,7 @@ exports.mobile = async (req, res) => {
   }
 };
 
-exports.google = async (req, res, next) => {
+exports.google = async (req, res) => {
   try {
     const firstName = req.body.name;
     const email = req.body.email;
@@ -59,14 +59,16 @@ exports.google = async (req, res, next) => {
 
     const user = await User.findOneWithDeleted({ email });
     const loginUser = await User.findOne({ email: email });
+    console.log(user);
 
-   if (user.deleted === false) {
+    if (user && user.deleted === false) {
       sendToken(loginUser, 200, res);
-    } else if (user.deleted === true) {
+    } else if (user && user.deleted === true) {
       res.status(400).json({
         status: false,
         message: "This account is Banned",
       });
+    } else if (!user) {
       const avatar = await uploadSingle(req.body.avatar, "Avatar");
       body.avatar = avatar;
       const randomPassword = Math.random().toString(36).slice(-8);
