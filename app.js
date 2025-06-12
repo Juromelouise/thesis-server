@@ -11,6 +11,7 @@ const report = require("./router/report");
 const plateNumber = require("./router/plateNumber");
 const maps = require("./router/maps");
 const comment = require("./router/comment")
+const chart = require("./router/chart");
 
 app.use(cors());
 app.use(express.json({ limit: "100mb" }));
@@ -34,5 +35,6 @@ app.use("/report", report);
 app.use("/plate", plateNumber);
 app.use("/map", maps);
 app.use("/comment", comment);
+app.use("/chart", chart);
 
 module.exports = app;

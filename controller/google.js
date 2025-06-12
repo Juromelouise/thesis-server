@@ -72,7 +72,6 @@ exports.google = async (req, res) => {
       const avatar = await uploadSingle(req.body.avatar, "Avatar");
       body.avatar = avatar;
       const randomPassword = Math.random().toString(36).slice(-8);
-      console.log(randomPassword);
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(randomPassword, salt);
 
