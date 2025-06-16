@@ -61,7 +61,6 @@ const blurImages = async (files) => {
 };
 
 exports.createReport = async (req, res) => {
-  console.log("Creating report with body:", req.body);
   try {
     let plate;
     const reporter = req.user.id;
@@ -85,7 +84,6 @@ exports.createReport = async (req, res) => {
     let geocode = {};
 
     const parsedGeocode = JSON.parse(geocodeData);
-    console.log("parsedGeocode", parsedGeocode);
     if (!parsedGeocode) {
       geocodeCoor = await geocodeFomatter(location);
       if (geocodeCoor) {
@@ -99,13 +97,12 @@ exports.createReport = async (req, res) => {
           longitude: null,
         };
       }
-    }else{
+    } else {
       geocode = {
         latitude: parsedGeocode.latitude,
         longitude: parsedGeocode.longitude,
       };
     }
-    console.log("geocode", geocode);
 
     const report = await Report.create({
       location,
@@ -152,8 +149,8 @@ exports.createReport = async (req, res) => {
     }
 
     const data = {
-      title: "Report Submitted Successfully",
-      message: `A new report has been submitted by ${req.user.firstName}. Please review it.`,
+      title: "Report Submitted",
+      message: `Thank you for submitting your report. Your submission has been received.`,
       data: { data: report._id },
     };
     await pushNotification(data, req.user.pushToken);

@@ -5,12 +5,13 @@ const { uploadMultiple } = require("../utils/cloudinaryUploader");
 
 exports.getData = async (req, res) => {
   try {
-    const reports = await Report.find({ reporter: req.user.id }).select(
+    const reports = await Report.find({ reporter: req.user._id.toString() }).select(
       "createdAt location description original"
     );
+
     const obstructions = await Obstruction.find({
-      reporter: req.user.id,
-    }).select("createdAt location description");
+      reporter: req.user._id.toString(),
+    }).select("createdAt location description original");
 
     const data = [...reports, ...obstructions].map((item) => ({
       createdAt: item.createdAt,
@@ -20,6 +21,8 @@ exports.getData = async (req, res) => {
       _id: item._id,
       plateNumber: item.plateNumber ? true : false,
     }));
+
+    console.log(data);
 
     res.status(200).json({ data: data });
   } catch (e) {

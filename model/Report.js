@@ -66,7 +66,7 @@ const reportSchema = new mongoose.Schema({
   status: {
     type: String,
     required: true,
-    enum: ["Pending", "Approved", "Disapproved", "Resolved"],
+    enum: ["Pending", "Reviewed for Proper Action", "Ongoing Investigation", "Approved", "Declined", "Resolved"],
     default: "Pending",
   },
   editableStatus: {
