@@ -46,7 +46,6 @@ exports.getAllData = async (req, res) => {
 
     const obstructions = await Obstruction.find({
       postIt: true,
-      status: "Approved",
     })
       .skip((page - 1) * limit)
       .limit(Number(limit));

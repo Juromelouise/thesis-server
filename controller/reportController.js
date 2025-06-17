@@ -343,7 +343,7 @@ exports.updateReportStatus = async (req, res, next) => {
         {
           status: req.body.status,
           reason: req.body.reason,
-          editableStatus: editableStatus.editableStatus + 1,
+          // editableStatus: editableStatus.editableStatus + 1,
         },
         { new: true }
       );

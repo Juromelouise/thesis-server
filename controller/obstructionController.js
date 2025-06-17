@@ -122,7 +122,7 @@ exports.editableStatusObs = async (req, res) => {
         {
           status: req.body.status,
           reason: req.body.reason,
-          editableStatus: editableStatus.editableStatus + 1,
+          // editableStatus: editableStatus.editableStatus + 1,
         },
         { new: true }
       );
