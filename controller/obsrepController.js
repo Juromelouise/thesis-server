@@ -5,9 +5,9 @@ const { uploadMultiple } = require("../utils/cloudinaryUploader");
 
 exports.getData = async (req, res) => {
   try {
-    const reports = await Report.find({ reporter: req.user._id.toString() }).select(
-      "createdAt location description original"
-    );
+    const reports = await Report.find({
+      reporter: req.user._id.toString(),
+    }).select("createdAt location description original");
 
     const obstructions = await Obstruction.find({
       reporter: req.user._id.toString(),
@@ -37,10 +37,10 @@ exports.getAllData = async (req, res) => {
     const reports = await Report.find({ postIt: true })
       .skip((page - 1) * limit)
       .limit(Number(limit));
-      
-      const filteredReports = reports.map((report) => {
-      const reportObject = report.toObject(); 
-      delete reportObject.plateNumber; 
+
+    const filteredReports = reports.map((report) => {
+      const reportObject = report.toObject();
+      delete reportObject.plateNumber;
       return reportObject;
     });
 
@@ -55,6 +55,35 @@ exports.getAllData = async (req, res) => {
   } catch (e) {
     console.log(e.message);
     res.status(500).json({ message: "Error on Fetching All Report Data" });
+  }
+};
+
+exports.getAllDataComplaints = async (req, res) => {
+  try {
+    const obstructions = await Obstruction.find();
+    const plateNumbers = await PlateNumber.find()
+      .populate({
+        path: "violations.report",
+        select: "location description createdAt status",
+      })
+      .select("plateNumber violations createdAt");
+
+    let allViolations = plateNumbers.flatMap((plateNumber) =>
+      plateNumber.violations.map((violation) => ({
+        plateNumber: plateNumber.plateNumber,
+        location: violation.report.location,
+        description: violation.report.description,
+        createdAt: violation.report.createdAt,
+        violations: violation.types,
+        status: violation.report.status,
+        _id: violation.report._id,
+      }))
+    );
+    const data = [...obstructions, ...allViolations]
+    res.status(200).json({ data: data });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error on Fetching All Complaints Data" });
   }
 };
 

@@ -27,6 +27,7 @@ const {
   getAllDataApproved,
   updateStatusResolved,
   getAllDataApprovedObstruction,
+  getAllDataComplaints,
 } = require("../controller/obsrepController");
 
 //POST
@@ -72,7 +73,8 @@ router.delete("/delete/report/:id", isAuthenticated, deleteReport);
 router.delete("/delete/obstruction/:id", isAuthenticated, deleteObstruction);
 
 //ADMIN
-router.get("/admin/report", isAuthenticated, Admin, getAllDataAdmin);
+// router.get("/admin/report", isAuthenticated, Admin, getAllDataAdmin);
+router.get("/admin/report/obstruction", getAllDataComplaints);
 router.get("/admin/obstruction", isAuthenticated, Admin, getAllobstructions);
 router.get("/admin/report/:id", isAuthenticated, getSingleReport);
 router.get(
