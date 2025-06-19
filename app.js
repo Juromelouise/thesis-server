@@ -12,6 +12,7 @@ const plateNumber = require("./router/plateNumber");
 const maps = require("./router/maps");
 const comment = require("./router/comment")
 const chart = require("./router/chart");
+const street = require("./router/street");
 
 app.use(cors());
 app.use(express.json({ limit: "100mb" }));
@@ -36,5 +37,6 @@ app.use("/plate", plateNumber);
 app.use("/map", maps);
 app.use("/comment", comment);
 app.use("/chart", chart);
+app.use("/street", street);
 
 module.exports = app;
