@@ -10,7 +10,7 @@ exports.getAllStreets = async (req, res) => {
       {
         $group: {
           _id: "$streetName",
-          coordinates: { $push: "$coordinates" },
+          segments: { $push: "$coordinates" },
           color: { $first: "$color" },
         },
       },
@@ -18,13 +18,7 @@ exports.getAllStreets = async (req, res) => {
         $project: {
           _id: 0,
           streetName: "$_id",
-          coordinates: {
-            $reduce: {
-              input: "$coordinates",
-              initialValue: [],
-              in: { $concatArrays: ["$$value", "$$this"] },
-            },
-          },
+          segments: 1,
           color: 1,
         },
       },
@@ -35,19 +29,11 @@ exports.getAllStreets = async (req, res) => {
     res.status(500).json({ message: "Aggregation failed", error: err.message });
   }
 };
-
 exports.putStreet = async (req, res) => {
   try {
     // List all your JSON files
     const jsonFiles = [
-      "1.json",
-      "2.json",
-      "3.json",
-      "4.json",
-      "5.json",
-      "6.json",
-      "7.json",
-      "8.json",
+      "streets.json"
     ];
 
     let totalImported = 0;
@@ -89,6 +75,23 @@ exports.putStreet = async (req, res) => {
     console.error("Error in street import:", error);
     res.status(500).json({
       message: "Failed to import street data",
+      error: error.message,
+    });
+  }
+};
+
+exports.streetColor = async (req, res) => {
+  try {
+    // Update all streets' color to gray (#808080)
+    const result = await Street.updateMany({}, { $set: { color: "#808080" } });
+    res.status(200).json({
+      message: "All street colors updated to gray.",
+      modifiedCount: result.modifiedCount,
+    });
+  } catch (error) {
+    console.error("Error updating street colors:", error);
+    res.status(500).json({
+      message: "Failed to update street colors.",
       error: error.message,
     });
   }

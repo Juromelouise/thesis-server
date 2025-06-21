@@ -1,7 +1,8 @@
 const router = require("express").Router();
-const { getAllStreets, putStreet } = require("../controller/streetController");
+const { getAllStreets, putStreet, streetColor} = require("../controller/streetController");
 
 router.get("/street", getAllStreets);
 router.get("/street/import", putStreet);
+router.get("/street/merge", streetColor);
 
 module.exports = router;
