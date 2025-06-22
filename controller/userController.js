@@ -1,4 +1,6 @@
 const User = require("../model/User");
+const Report = require("../model/Report");
+const Obstruct = require("../model/Obstruction");
 const sendToken = require("../utils/jwtToken");
 const { uploadSingle } = require("../utils/cloudinaryUploader");
 const path = require("path");
@@ -42,10 +44,30 @@ exports.logout = async (req, res, next) => {
 exports.profile = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
+    const reportCount = await Report.countDocuments({ reporter: req.user.id });
+    const obstructionCount = await Obstruct.countDocuments({ reporter: req.user.id });
+
+    const report1 = await Report.find({ reporter: req.user.id })
+    const obstruction = await Obstruct.find({ reporter: req.user.id})
+
+    const reportPostCount = await Report.countDocuments({ reporter: req.user.id, postIt: true });
+    const obstructionPostCount = await Obstruct.countDocuments({ reporter: req.user.id, postIt: true});
+
+    const report = [...report1, ...obstruction];
+
+    const data = reportCount + obstructionCount;
+    const data2 = reportPostCount + obstructionPostCount;
+
+
+    console.log("Report Count: ", report1);
     res.status(200).json({
       success: true,
       user,
+      data,
+      data2,
+      report
     });
+
   } catch (e) {
     console.error("Error in Getting user: ", e);
     res.status(500).json({ message: "Error in Getting user" });

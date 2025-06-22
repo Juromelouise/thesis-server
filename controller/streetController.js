@@ -99,7 +99,7 @@ exports.streetColor = async (req, res) => {
 
 exports.deleteStreet = async (req, res) => {
   try {
-    const result = await Street.find({ streetName: "Heroes Trail" }).deleteMany();
+    const result = await Street.find({ streetName: "Southeast Metro Manila Expressway" }).deleteMany();
     if (!result) {
       return res.status(404).json({ message: "Street not found" });
     }

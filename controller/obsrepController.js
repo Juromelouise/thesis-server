@@ -104,26 +104,43 @@ exports.getAllDataApproved = async (req, res) => {
             $filter: {
               input: "$reportDetails",
               as: "detail",
-              cond: { $ne: ["$$detail.status", "Declined"] },
-            },
-          },
-          violations: {
-            $filter: {
-              input: "$violations",
-              as: "violation",
               cond: {
-                $in: ["$$violation.report", "$reportDetails._id"],
+                $and: [
+                  { $ne: ["$$detail.status", "Declined"] },
+                  { $ne: ["$$detail.status", "Pending"] }
+                ]
               },
             },
           },
         },
       },
       {
-        $match: {
-          "reportDetails.status": { $ne: "Pending" },
-          count: { $gt: 0 },
-        },
+        $addFields: {
+          violations: {
+            $filter: {
+              input: "$violations",
+              as: "violation",
+              cond: {
+                $in: [
+                  "$$violation.report",
+                  {
+                    $map: {
+                      input: "$reportDetails",
+                      as: "rd",
+                      in: "$$rd._id"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
       },
+      {
+        $match: {
+          $expr: { $gt: [{ $size: "$violations" }, 0] }
+        }
+      }
     ]);
     const data = [...report];
     res.status(200).json({ data: data });
