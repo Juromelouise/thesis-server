@@ -104,7 +104,7 @@ exports.getAllDataApproved = async (req, res) => {
             $filter: {
               input: "$reportDetails",
               as: "detail",
-              cond: { $ne: ["$$detail.status", "Disapproved"] },
+              cond: { $ne: ["$$detail.status", "Declined"] },
             },
           },
           violations: {

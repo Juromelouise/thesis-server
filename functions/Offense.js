@@ -65,7 +65,7 @@ exports.offenseUpdater = async (plateNumberId, status) => {
         console.log("checkOffense is already true. No changes made.");
         return true;
       }
-    } else if (status === "Disapproved") {
+    } else if (status === "Declined") {
       const hasApprovedReports = plateNumber.violations?.some(
         (violation) => violation.report?.status === "Approved"
       );
