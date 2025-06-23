@@ -5,26 +5,35 @@ const { uploadMultiple } = require("../utils/cloudinaryUploader");
 
 exports.getData = async (req, res) => {
   try {
-    const reports = await Report.find({
+    const reports = await Report.findWithDeleted({
       reporter: req.user._id.toString(),
     }).select("createdAt location description original");
 
-    const obstructions = await Obstruction.find({
+    const obstructions = await Obstruction.findWithDeleted({
       reporter: req.user._id.toString(),
     }).select("createdAt location description original");
 
-    const data = [...reports, ...obstructions].map((item) => ({
-      createdAt: item.createdAt,
-      location: item.location,
-      description: item.description,
-      original: item.original,
-      _id: item._id,
-      plateNumber: item.plateNumber ? true : false,
-    }));
+    const data = await Promise.all(
+      [...reports, ...obstructions].map(async (item) => {
+        let hasPlateNumber = false;
+        if (item._id) {
+          const plate = await PlateNumber.findOneWithDeleted({
+            "violations.report": item._id,
+          }).select("_id");
+          hasPlateNumber = !!plate;
+        }
+        return {
+          createdAt: item.createdAt,
+          location: item.location,
+          description: item.description,
+          original: item.original,
+          _id: item._id,
+          plateNumber: hasPlateNumber,
+        };
+      })
+    );
 
-    console.log(data);
-
-    res.status(200).json({ data: data });
+    res.status(200).json({ data });
   } catch (e) {
     console.log(e);
     res.status(500).json({ message: "Error on Fetching Report Data" });
@@ -60,8 +69,8 @@ exports.getAllData = async (req, res) => {
 
 exports.getAllDataComplaints = async (req, res) => {
   try {
-    const obstructions = await Obstruction.find();
-    const plateNumbers = await PlateNumber.find()
+    const obstructions = await Obstruction.findWithDeleted();
+    const plateNumbers = await PlateNumber.findWithDeleted()
       .populate({
         path: "violations.report",
         select: "location description createdAt status",

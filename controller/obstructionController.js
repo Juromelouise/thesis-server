@@ -93,7 +93,7 @@ exports.deleteObstruction = async (req, res) => {
 
 exports.getAllobstructions = async (req, res) => {
   try {
-    const obstructions = await Obstruction.find();;
+    const obstructions = await Obstruction.findWithDeleted();
     res.status(200).json({ obstructions });
   } catch (e) {
     console.log("Error in getting all obstructions: " + e);
