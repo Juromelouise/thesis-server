@@ -79,8 +79,8 @@ router.get("/admin/obstruction", isAuthenticated, Admin, getAllobstructions);
 router.get("/admin/report/:id", isAuthenticated, getSingleReport);
 router.get(
   "/admin/report/report/approved",
-  isAuthenticated,
-  Admin,
+  // isAuthenticated,
+  // Admin,
   getAllDataApproved
 );
 router.get(

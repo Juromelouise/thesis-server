@@ -79,7 +79,7 @@ exports.getAllDataComplaints = async (req, res) => {
         _id: violation.report._id,
       }))
     );
-    const data = [...obstructions, ...allViolations]
+    const data = [...obstructions, ...allViolations];
     res.status(200).json({ data: data });
   } catch (error) {
     console.error(error);
@@ -107,8 +107,8 @@ exports.getAllDataApproved = async (req, res) => {
               cond: {
                 $and: [
                   { $ne: ["$$detail.status", "Declined"] },
-                  { $ne: ["$$detail.status", "Pending"] }
-                ]
+                  { $ne: ["$$detail.status", "Pending"] },
+                ],
               },
             },
           },
@@ -127,22 +127,26 @@ exports.getAllDataApproved = async (req, res) => {
                     $map: {
                       input: "$reportDetails",
                       as: "rd",
-                      in: "$$rd._id"
-                    }
-                  }
-                ]
-              }
-            }
-          }
-        }
+                      in: "$$rd._id",
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        },
       },
       {
         $match: {
-          $expr: { $gt: [{ $size: "$violations" }, 0] }
-        }
-      }
+          $expr: { $gt: [{ $size: "$violations" }, 0] },
+        },
+      },
     ]);
-    const data = [...report];
+
+    const approvedObstructions = await Obstruction.find({ status: "Approved" });
+
+    const data = [...report, ...approvedObstructions];
+
     res.status(200).json({ data: data });
   } catch (error) {
     console.log(error);
