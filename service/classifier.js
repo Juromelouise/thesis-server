@@ -9,6 +9,10 @@ exports.classifyReport = async (req, res, next) => {
         violation: "Overnight parking",
       },
       {
+        description: "overnight parking",
+        violation: "Overnight parking",
+      },
+      {
         description:
           "a vehicle being parked in a location that creates a danger or obstruction, often violating traffic rules.",
         violation: "Hazard parking",
@@ -43,11 +47,13 @@ exports.classifyReport = async (req, res, next) => {
     });
     classifier.train();
 
-    // req.body.description.translation = 
+    // req.body.description.translation =
     const reportText = req.body.description.translation.toLowerCase();
 
     // Get all classifications with probabilities
-    const classifications = classifier.getClassifications("the car is parked where it  and blocking the sidewalk");
+    const classifications = classifier.getClassifications(
+      "the car is parked where it  and blocking the sidewalk"
+    );
 
     // Sort classifications by probability in descending order
     const sortedClassifications = classifications.sort(
@@ -64,11 +70,13 @@ exports.classifyReport = async (req, res, next) => {
       label: c.label,
       percentage: (c.value / totalProbability) * 100,
     }));
-    
+
     // Compare the top two percentages
     let predictedViolations = [];
     if (classificationsWithPercentages.length > 1) {
-      const diff = classificationsWithPercentages[0].percentage - classificationsWithPercentages[1].percentage;
+      const diff =
+        classificationsWithPercentages[0].percentage -
+        classificationsWithPercentages[1].percentage;
       if (diff > 20) {
         // If the top violation is much higher than the second, only include the top one
         predictedViolations = [classificationsWithPercentages[0].label];
@@ -76,13 +84,13 @@ exports.classifyReport = async (req, res, next) => {
         // Otherwise, include all with the same top percentage (in case of ties)
         const topPercent = classificationsWithPercentages[0].percentage;
         predictedViolations = classificationsWithPercentages
-          .filter(c => c.percentage === topPercent)
-          .map(c => c.label);
+          .filter((c) => c.percentage === topPercent)
+          .map((c) => c.label);
       }
     } else if (classificationsWithPercentages.length === 1) {
       predictedViolations = [classificationsWithPercentages[0].label];
     }
-    
+
     req.body.violations = predictedViolations;
     next();
   } catch (error) {
