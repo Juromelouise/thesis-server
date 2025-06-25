@@ -59,6 +59,8 @@ exports.getAllData = async (req, res) => {
       .skip((page - 1) * limit)
       .limit(Number(limit));
 
+      
+
     const data = [...filteredReports, ...obstructions];
     res.status(200).json({ data: data });
   } catch (e) {

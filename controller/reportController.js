@@ -118,7 +118,10 @@ exports.createReport = async (req, res) => {
     });
 
     if (plateNumber) {
-      const ple = await PlateNumber.findOne({ plateNumber });
+      const ple = await PlateNumber.findOne({
+        plateNumber: plateNumber.replace(/\s+/g, ""),
+      });
+      console.log("Plate Number found:", ple);
       if (ple) {
         plate = await PlateNumber.findByIdAndUpdate(
           ple._id,
@@ -309,17 +312,18 @@ exports.getAllDataAdmin = async (req, res) => {
 exports.getSingleReport = async (req, res) => {
   try {
     // Fetch the report (even if soft-deleted)
-    const report = await Report.findOneWithDeleted({ _id: req.params.id })
-      .populate({
-        path: "plateNumber",
-        model: "PlateNumber",
+    const report = await Report.findOneWithDeleted({
+      _id: req.params.id,
+    }).populate({
+      path: "plateNumber",
+      model: "PlateNumber",
+      options: { withDeleted: true },
+      populate: {
+        path: "violations.report",
+        model: "Report",
         options: { withDeleted: true },
-        populate: {
-          path: "violations.report",
-          model: "Report",
-          options: { withDeleted: true },
-        },
-      });
+      },
+    });
 
     if (!report) {
       return res.status(404).json({ message: "Report not found" });
@@ -339,9 +343,12 @@ exports.getSingleReport = async (req, res) => {
     }
 
     // Get violation types for this report
-    const violationTypes = plateNumber?.violations
-      ?.filter((violation) => violation.report?._id?.toString() === req.params.id)
-      .map((violation) => violation.types) || [];
+    const violationTypes =
+      plateNumber?.violations
+        ?.filter(
+          (violation) => violation.report?._id?.toString() === req.params.id
+        )
+        .map((violation) => violation.types) || [];
 
     const reportData = {
       ...report.toObject(),
@@ -358,20 +365,22 @@ exports.getSingleReport = async (req, res) => {
     console.error("Error fetching report:", error);
     res.status(500).json({ message: "Error in fetching report" });
   }
-};exports.getSingleReport = async (req, res) => {
+};
+exports.getSingleReport = async (req, res) => {
   try {
     // Fetch the report (even if soft-deleted)
-    const report = await Report.findOneWithDeleted({ _id: req.params.id })
-      .populate({
-        path: "plateNumber",
-        model: "PlateNumber",
+    const report = await Report.findOneWithDeleted({
+      _id: req.params.id,
+    }).populate({
+      path: "plateNumber",
+      model: "PlateNumber",
+      options: { withDeleted: true },
+      populate: {
+        path: "violations.report",
+        model: "Report",
         options: { withDeleted: true },
-        populate: {
-          path: "violations.report",
-          model: "Report",
-          options: { withDeleted: true },
-        },
-      });
+      },
+    });
 
     if (!report) {
       return res.status(404).json({ message: "Report not found" });
@@ -390,11 +399,13 @@ exports.getSingleReport = async (req, res) => {
       });
     }
 
-
     // Get violation types for this report
-    const violationTypes = plateNumber?.violations
-      ?.filter((violation) => violation.report?._id?.toString() === req.params.id)
-      .map((violation) => violation.types) || [];
+    const violationTypes =
+      plateNumber?.violations
+        ?.filter(
+          (violation) => violation.report?._id?.toString() === req.params.id
+        )
+        .map((violation) => violation.types) || [];
 
     const reportData = {
       ...report.toObject(),
