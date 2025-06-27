@@ -16,4 +16,4 @@ const streetSchema = new mongoose.Schema({
   },
 });
 
-module.exports = streetSchema;
+module.exports = mongoose.model("Street", streetSchema);

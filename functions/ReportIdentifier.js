@@ -2,7 +2,14 @@ const { createReport } = require("../controller/reportController");
 const { createObstruction } = require("../controller/obstructionController");
 exports.ReportIdentier = async (req, res) => {
   try {
-    if (req.body.plateNumber && req.body.plateNumber.trim() !== "") {
+    const plateNumber = req.body.plateNumber;
+
+    const isValidPlate =
+      plateNumber &&
+      plateNumber.trim() !== "" &&
+      plateNumber !== "undefined" &&
+      plateNumber !== "null";
+    if (isValidPlate) {
       createReport(req, res);
     } else {
       createObstruction(req, res);

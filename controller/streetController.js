@@ -1,8 +1,8 @@
-// const Street = require("../model/Street");
+const Street = require("../model/Street");
 const fs = require("fs");
 const path = require("path");
 const mongoose = require("mongoose");
-const Street = mongoose.model("Street", require("../model/Street"));
+// const Street = mongoose.model("Street", require("../model/Street"));
 
 exports.getAllStreets = async (req, res) => {
   try {
@@ -32,9 +32,7 @@ exports.getAllStreets = async (req, res) => {
 exports.putStreet = async (req, res) => {
   try {
     // List all your JSON files
-    const jsonFiles = [
-      "streets.json"
-    ];
+    const jsonFiles = ["streets.json"];
 
     let totalImported = 0;
     const results = [];
@@ -99,7 +97,9 @@ exports.streetColor = async (req, res) => {
 
 exports.deleteStreet = async (req, res) => {
   try {
-    const result = await Street.find({ streetName: "Southeast Metro Manila Expressway" }).deleteMany();
+    const result = await Street.find({
+      streetName: "Southeast Metro Manila Expressway",
+    }).deleteMany();
     if (!result) {
       return res.status(404).json({ message: "Street not found" });
     }
@@ -108,6 +108,22 @@ exports.deleteStreet = async (req, res) => {
     console.error("Error deleting street:", error);
     res.status(500).json({
       message: "Failed to delete street",
+      error: error.message,
+    });
+  }
+};
+
+exports.getAllStreetName = async (req, res) => {
+  try {
+    const streets = await Street.find({}, "streetName").distinct("streetName");
+    if (!streets || streets.length === 0) {
+      return res.status(404).json({ message: "No street names found" });
+    }
+    res.status(200).json({ streetNames: streets });
+  } catch (error) {
+    console.error("Error fetching street names:", error);
+    res.status(500).json({
+      message: "Failed to fetch street names",
       error: error.message,
     });
   }

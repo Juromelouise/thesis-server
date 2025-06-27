@@ -9,6 +9,7 @@ const path = require("path");
 const { pushNotification } = require("../utils/Notification");
 const { geocodeFomatter } = require("../service/geocoder");
 const Obstruction = require("../model/Obstruction");
+const Street = require("../model/Street");
 
 const ensureTempDirectoryExists = async () => {
   const tempDir = path.join(__dirname, "../temp");
@@ -68,43 +69,39 @@ exports.createReport = async (req, res) => {
     const reporter = req.user.id;
     req.body.original = req.body.description.original;
     req.body.description = req.body.description.translation;
-    const {
-      location,
-      description,
-      original,
-      plateNumber,
-      violations,
-      postIt,
-      geocodeData,
-    } = req.body;
+    const { location, description, original, plateNumber, violations, postIt } =
+      req.body;
 
     const blurredImages = await blurImages(req.files);
 
     const images = await uploadMultiple(blurredImages, "ReportImages/Blurred");
     const imagesAdmin = await uploadMultiple(req.files, "ReportImages");
 
-    let geocode = {};
+    const street = await Street.findOne({ streetName: location });
+    const geocode = {
+      latitude: street.coordinates[0].lat,
+      longitude: street.coordinates[0].lng,
+    };
 
-    const parsedGeocode = JSON.parse(geocodeData);
-    if (!parsedGeocode) {
-      geocodeCoor = await geocodeFomatter(location);
-      if (geocodeCoor) {
-        geocode = {
-          latitude: geocodeCoor[0].latitude,
-          longitude: geocodeCoor[0].longitude,
-        };
-      } else {
-        geocode = {
-          latitude: null,
-          longitude: null,
-        };
-      }
-    } else {
-      geocode = {
-        latitude: parsedGeocode.latitude,
-        longitude: parsedGeocode.longitude,
-      };
-    }
+    // if (!parsedGeocode) {
+    //   geocodeCoor = await geocodeFomatter(location);
+    //   if (geocodeCoor) {
+    //     geocode = {
+    //       latitude: geocodeCoor[0].latitude,
+    //       longitude: geocodeCoor[0].longitude,
+    //     };
+    //   } else {
+    //     geocode = {
+    //       latitude: null,
+    //       longitude: null,
+    //     };
+    //   }
+    // } else {
+    //   geocode = {
+    //     latitude: parsedGeocode.latitude,
+    //     longitude: parsedGeocode.longitude,
+    //   };
+    // }
 
     const report = await Report.create({
       location,
@@ -391,8 +388,8 @@ exports.getSingleReport = async (req, res) => {
     });
 
     if (!report) {
-      const data = await Obstruction.findOneWithDeleted({_id: req.params.id,})
-      console.log(data)
+      const data = await Obstruction.findOneWithDeleted({ _id: req.params.id });
+      console.log(data);
       if (!data) {
         return res.status(404).json({ message: "Report not found" });
       }

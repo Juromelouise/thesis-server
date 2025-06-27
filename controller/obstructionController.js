@@ -2,6 +2,7 @@ const Obstruction = require("../model/Obstruction");
 const { uploadMultiple } = require("../utils/cloudinaryUploader");
 const { pushNotification } = require("../utils/Notification");
 const { geocodeFomatter } = require("../service/geocoder");
+const Street = require("../model/Street");
 
 exports.createObstruction = async (req, res) => {
   console.log("Creating obstruction with body:", req.body);
@@ -9,45 +10,49 @@ exports.createObstruction = async (req, res) => {
     const reporter = req.user.id;
     req.body.original = req.body.description.original;
     req.body.description = req.body.description.translation;
-    const { location, description, original, violations, geocodeData } = req.body;
-    const images = await uploadMultiple(req.files, "ObstructionImages");
+    const { location, description, original, violations } = req.body;
+    // const images = await uploadMultiple(req.files, "ObstructionImages");
 
-       let geocode = {};
-    
-        const parsedGeocode = JSON.parse(geocodeData);
-        if (!parsedGeocode) {
-          geocodeCoor = await geocodeFomatter(location);
-          if (geocodeCoor) {
-            geocode = {
-              latitude: geocodeCoor[0].latitude,
-              longitude: geocodeCoor[0].longitude,
-            };
-          } else {
-            geocode = {
-              latitude: null,
-              longitude: null,
-            };
-          }
-        }else{
-          geocode = {
-            latitude: parsedGeocode.latitude,
-            longitude: parsedGeocode.longitude,
-          };
-        }
+    const street = await Street.findOne({ streetName: location });
+    const geocode = {
+      latitude: street.coordinates[0].lat,
+      longitude: street.coordinates[0].lng,
+    };
+    console.log("Geocode for obstruction:", geocode);
 
+    // const parsedGeocode = JSON.parse(geocodeData);
+    // if (!parsedGeocode) {
+    //   geocodeCoor = await geocodeFomatter(location);
+    //   if (geocodeCoor) {
+    //     geocode = {
+    //       latitude: geocodeCoor[0].latitude,
+    //       longitude: geocodeCoor[0].longitude,
+    //     };
+    //   } else {
+    //     geocode = {
+    //       latitude: null,
+    //       longitude: null,
+    //     };
+    //   }
+    // }else{
+    //   geocode = {
+    //     latitude: parsedGeocode.latitude,
+    //     longitude: parsedGeocode.longitude,
+    //   };
+    // }
 
-    const obstruction = await Obstruction.create({
-      location,
-      description,
-      images,
-      original,
-      reporter,
-      geocode,
-      violations,
-    });
+    // const obstruction = await Obstruction.create({
+    //   location,
+    //   description,
+    //   images,
+    //   original,
+    //   reporter,
+    //   geocode,
+    //   violations,
+    // });
 
     res.status(200).json({
-      obstruction,
+      // obstruction,
     });
   } catch (e) {
     console.error("Error in creating obstruction:", e);
