@@ -1,5 +1,6 @@
 const Report = require("../model/Report");
 const Comment = require("../model/Comment");
+const Obstruction = require("../model/Obstruction");
 
 exports.addCommentToReport = async (req, res) => {
   try {
@@ -17,7 +18,15 @@ exports.addCommentToReport = async (req, res) => {
 
     const report = await Report.findById(id);
     if (!report) {
-      return res.status(404).json({ message: "Report not found" });
+      const obstruction = await Obstruction.findById(id);
+      if (!obstruction) {
+        return res
+          .status(404)
+          .json({ message: "Report or Obstruction not found" });
+      }
+      obstruction.comment.push(comment._id);
+      await obstruction.save();
+      return res.status(201).json(comment);
     }
 
     report.comment.push(comment._id);

@@ -14,7 +14,7 @@ const obstructionSchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
-   geocode: {
+  geocode: {
     latitude: {
       type: Number,
       default: null,
@@ -33,6 +33,13 @@ const obstructionSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
+  comment: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Comment",
+      autopopulate: true,
+    },
+  ],
   violations: [],
   images: [
     {

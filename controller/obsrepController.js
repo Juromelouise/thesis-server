@@ -59,8 +59,6 @@ exports.getAllData = async (req, res) => {
       .skip((page - 1) * limit)
       .limit(Number(limit));
 
-      
-
     const data = [...filteredReports, ...obstructions];
     res.status(200).json({ data: data });
   } catch (e) {
@@ -180,13 +178,28 @@ exports.updateStatusResolved = async (req, res) => {
     const { status, reportId, plateId } = req.body;
     const images = await uploadMultiple(req.files, "ConfirmationImages");
 
-    // Update the status of the reports to "Resolved"
-    await Report.updateMany(
+    const report = await Report.updateMany(
       { _id: { $in: reportId } },
       { status: status, confirmationImages: images }
     );
+    
+    if (report.matchedCount > 0) {
+      await PlateNumber.deleteById(plateId);
+    }
 
-    await PlateNumber.deleteById(plateId);
+    if (report.matchedCount === 0) {
+      console.log(status, reportId, plateId);
+      const obstruction = await Obstruction.updateMany(
+        { _id: { $in: reportId } },
+        { status: status, confirmationImages: images }
+      );
+      console.log(obstruction);
+      if (!obstruction) {
+        return res
+          .status(404)
+          .json({ message: "Report or Obstruction not found" });
+      }
+    }
 
     res.status(200).json({ message: "Status Updated to Resolved" });
   } catch (error) {

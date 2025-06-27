@@ -4,6 +4,11 @@ const User = require("../model/User");
 
 cron.schedule("* * * * *", async () => {
   try {
+    const now = new Date();
+    if (isNaN(now)) {
+      console.error("Invalid date at cron execution:", now);
+      return;
+    }
     const expiredBans = await Ban.find({
       endDate: { $ne: null, $lte: new Date() },
     });
