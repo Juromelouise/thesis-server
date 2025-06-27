@@ -11,14 +11,13 @@ exports.createObstruction = async (req, res) => {
     req.body.original = req.body.description.original;
     req.body.description = req.body.description.translation;
     const { location, description, original, violations } = req.body;
-    // const images = await uploadMultiple(req.files, "ObstructionImages");
+    const images = await uploadMultiple(req.files, "ObstructionImages");
 
     const street = await Street.findOne({ streetName: location });
     const geocode = {
       latitude: street.coordinates[0].lat,
       longitude: street.coordinates[0].lng,
     };
-    console.log("Geocode for obstruction:", geocode);
 
     // const parsedGeocode = JSON.parse(geocodeData);
     // if (!parsedGeocode) {
@@ -41,18 +40,18 @@ exports.createObstruction = async (req, res) => {
     //   };
     // }
 
-    // const obstruction = await Obstruction.create({
-    //   location,
-    //   description,
-    //   images,
-    //   original,
-    //   reporter,
-    //   geocode,
-    //   violations,
-    // });
+    const obstruction = await Obstruction.create({
+      location,
+      description,
+      images,
+      original,
+      reporter,
+      geocode,
+      violations,
+    });
 
     res.status(200).json({
-      // obstruction,
+      obstruction,
     });
   } catch (e) {
     console.error("Error in creating obstruction:", e);
