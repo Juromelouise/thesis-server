@@ -6,6 +6,7 @@ exports.uploadSingle = async (postImage, folderName) => {
     folder: `Thesis/${folderName}`,
   });
 
+if (postImage && !postImage.includes("defaultavatar.jpg")) {
   fs.unlink(postImage, (err) => {
     if (err) {
       console.error("Failed to delete local file:", err);
@@ -13,6 +14,7 @@ exports.uploadSingle = async (postImage, folderName) => {
       console.log("Successfully deleted local file");
     }
   });
+}
 
   return {
     public_id: result.public_id,
