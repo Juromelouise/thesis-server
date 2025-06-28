@@ -10,7 +10,7 @@ exports.createObstruction = async (req, res) => {
     const reporter = req.user.id;
     req.body.original = req.body.description.original;
     req.body.description = req.body.description.translation;
-    const { location, description, original, violations } = req.body;
+    const { location, description, original, violations, postIt } = req.body;
     const images = await uploadMultiple(req.files, "ObstructionImages");
 
     const street = await Street.findOne({ streetName: location });
@@ -46,6 +46,7 @@ exports.createObstruction = async (req, res) => {
       images,
       original,
       reporter,
+      postIt,
       geocode,
       violations,
     });

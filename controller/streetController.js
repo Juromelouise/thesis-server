@@ -128,3 +128,18 @@ exports.getAllStreetName = async (req, res) => {
     });
   }
 };
+
+exports.getStreetName = async (req, res) => {
+  try {
+    const data = await Street.find({ streetName: "Champaca Street" });
+    res.status(200).json({
+      data,
+    });
+  } catch (error) {
+    console.error("Error fetching street name:", error);
+    res.status(500).json({
+      message: "Failed to fetch street name",
+      error: error.message,
+    });
+  }
+};

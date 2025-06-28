@@ -18,9 +18,9 @@ exports.mobile = async (req, res) => {
 
     console.log(user);
 
-    if (user.deleted === false) {
+    if (user && user.deleted === false) {
       sendToken(loginUser, 200, res);
-    } else if (user.deleted === true) {
+    } else if (user && user.deleted === true) {
       res.status(400).json({
         status: false,
         message: "This account is Banned",
