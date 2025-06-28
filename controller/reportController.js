@@ -240,6 +240,14 @@ exports.updateReport = async (req, res) => {
 
     await report.save();
 
+    const data = {
+      title: "Report Updated",
+      message: `Your report has been updated successfully.`,
+      data: { data: report._id },
+    };
+
+    await pushNotification(data, req.user.pushToken);
+
     res.status(201).json({ message: "Report is Updated", report });
   } catch (e) {
     console.log("Error in Updated Report:" + e);
@@ -256,6 +264,13 @@ exports.deleteReport = async (req, res, next) => {
     if (report) {
       await report.remove();
     }
+
+    const data = {
+      title: "Report Deleted",
+      message: `Your report has been deleted successfully.`,
+    };
+
+    await pushNotification(data, req.user.pushToken);
     res.status(200).json({ success: true });
   } catch (e) {
     console.log("Error in deleting report: " + e);
@@ -307,70 +322,7 @@ exports.getAllDataAdmin = async (req, res) => {
     res.status(500).json({ message: "Error in fetching violations" });
   }
 };
-// exports.getSingleReport = async (req, res) => {
-//   try {
 
-//     // Fetch the report (even if soft-deleted)
-//     const report = await Report.findOneWithDeleted({
-//       _id: req.params.id,
-//     }).populate({
-//       path: "plateNumber",
-//       model: "PlateNumber",
-//       options: { withDeleted: true },
-//       populate: {
-//         path: "violations.report",
-//         model: "Report",
-//         options: { withDeleted: true },
-//       },
-//     });
-
-//     if (!report) {
-//       console.log("Report not found for ID:", req.params.id);
-//       const data = await Obstruction.findOneWithDeleted({_id: req.params.id,})
-//       console.log(data)
-//       if (!data) {
-//         return res.status(404).json({ message: "Report not found" });
-//       }
-//       return res.status(200).json({ report: data });
-//     }
-
-//     let plateNumber = report.plateNumber;
-
-//     // If plateNumber is null, try to find it by searching violations
-//     if (!plateNumber) {
-//       plateNumber = await PlateNumber.findOneWithDeleted({
-//         "violations.report": report._id,
-//       }).populate({
-//         path: "violations.report",
-//         model: "Report",
-//         options: { withDeleted: true },
-//       });
-//     }
-
-//     // Get violation types for this report
-//     const violationTypes =
-//       plateNumber?.violations
-//         ?.filter(
-//           (violation) => violation.report?._id?.toString() === req.params.id
-//         )
-//         .map((violation) => violation.types) || [];
-
-//     const reportData = {
-//       ...report.toObject(),
-//       plateNumber: plateNumber
-//         ? {
-//             ...plateNumber.toObject(),
-//             violations: violationTypes,
-//           }
-//         : null,
-//     };
-
-//     res.status(200).json({ report: reportData });
-//   } catch (error) {
-//     console.error("Error fetching report:", error);
-//     res.status(500).json({ message: "Error in fetching report" });
-//   }
-// };
 exports.getSingleReport = async (req, res) => {
   try {
     // Fetch the report (even if soft-deleted)

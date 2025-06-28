@@ -51,6 +51,13 @@ exports.createObstruction = async (req, res) => {
       violations,
     });
 
+    const data = {
+      title: "Report Submitted",
+      message: `Thank you for submitting your report. Your submission has been received.`,
+      data: { data: obstruction._id },
+    };
+    await pushNotification(data, req.user.pushToken);
+
     res.status(200).json({
       obstruction,
     });
@@ -77,6 +84,15 @@ exports.updateObstruction = async (req, res) => {
         runValidators: true,
       }
     );
+
+    const data = {
+      title: "Report Updated",
+      message: `Your report has been updated successfully.`,
+      data: { data: obstruction._id },
+    };
+
+    await pushNotification(data, req.user.pushToken);
+    
     res
       .status(201)
       .json({ message: "Obstruction is Updated", obstruction: obstruction });
