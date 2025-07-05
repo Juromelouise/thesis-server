@@ -69,7 +69,7 @@ exports.createReport = async (req, res) => {
     const reporter = req.user.id;
     req.body.original = req.body.description.original;
     req.body.description = req.body.description.translation;
-    const { location, description, original, plateNumber, violations, postIt } =
+    const { location, description, original, plateNumber, violations, postIt, details } =
       req.body;
 
     const blurredImages = await blurImages(req.files);
@@ -112,6 +112,7 @@ exports.createReport = async (req, res) => {
       reporter,
       postIt,
       geocode,
+      details,
       plateNumber: null,
     });
 

@@ -74,21 +74,44 @@ exports.getAllDataComplaints = async (req, res) => {
       .populate({
         path: "violations.report",
         select: "location description createdAt status",
+        match: null,
       })
       .select("plateNumber violations createdAt");
 
     let allViolations = plateNumbers.flatMap((plateNumber) =>
-      plateNumber.violations.map((violation) => ({
-        plateNumber: plateNumber.plateNumber,
-        location: violation.report.location,
-        description: violation.report.description,
-        createdAt: violation.report.createdAt,
-        violations: violation.types,
-        status: violation.report.status,
-        _id: violation.report._id,
-      }))
+      plateNumber.violations
+        .filter((violation) => violation.report !== null)
+        .map((violation) => ({
+          plateNumber: plateNumber.plateNumber,
+          location: violation.report.location,
+          description: violation.report.description,
+          createdAt: violation.report.createdAt,
+          violations: violation.types,
+          status: violation.report.status,
+          _id: violation.report._id,
+        }))
     );
-    const data = [...obstructions, ...allViolations];
+
+    const deletedReports = await Report.findWithDeleted({
+      status: "Deleted",
+    }).select("location description createdAt status");
+    console.log(deletedReports);
+
+    const deletedReportsFormatted = deletedReports.map((report) => ({
+      plateNumber: null,
+      location: report.location,
+      description: report.description,
+      createdAt: report.createdAt,
+      violations: [],
+      status: report.status,
+      _id: report._id,
+    }));
+
+    const data = [
+      ...obstructions,
+      ...allViolations,
+      ...deletedReportsFormatted,
+    ];
     res.status(200).json({ data: data });
   } catch (error) {
     console.error(error);
@@ -182,7 +205,7 @@ exports.updateStatusResolved = async (req, res) => {
       { _id: { $in: reportId } },
       { status: status, confirmationImages: images }
     );
-    
+
     if (report.matchedCount > 0) {
       await PlateNumber.deleteById(plateId);
     }

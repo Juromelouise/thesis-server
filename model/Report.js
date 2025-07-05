@@ -66,7 +66,15 @@ const reportSchema = new mongoose.Schema({
   status: {
     type: String,
     required: true,
-    enum: ["Pending", "Reviewed for Proper Action", "Ongoing Investigation", "Approved", "Declined", "Resolved"],
+    enum: [
+      "Pending",
+      "Reviewed for Proper Action",
+      "Ongoing Investigation",
+      "Approved",
+      "Declined",
+      "Resolved",
+      "Deleted",
+    ],
     default: "Pending",
   },
   editableStatus: {
@@ -89,6 +97,11 @@ const reportSchema = new mongoose.Schema({
   reason: {
     type: String,
     trim: true,
+  },
+  details: {
+    type: String,
+    trim: true,
+    default: "None",
   },
   postIt: {
     type: Boolean,
@@ -113,6 +126,7 @@ reportSchema.methods.remove = async function (next) {
       { "violations.report": this._id },
       { $pull: { violations: { report: this._id } } }
     );
+    await this.updateOne({ status: "Deleted", editableStatus: 0 });
     await this.delete({ _id: this._id });
     return;
   } catch (err) {

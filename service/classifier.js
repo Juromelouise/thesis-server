@@ -31,7 +31,7 @@ exports.classifyReport = async (req, res, next) => {
       }
     );
 
-    // console.log("Predicted violations:", response.data.predicted_violations);
+    console.log("Predicted violations:", response.data.predicted_violations);
 
     req.body.violations = response.data.predicted_violations;
   
