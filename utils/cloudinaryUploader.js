@@ -6,15 +6,15 @@ exports.uploadSingle = async (postImage, folderName) => {
     folder: `Thesis/${folderName}`,
   });
 
-if (postImage && !postImage.includes("defaultavatar.jpg")) {
-  fs.unlink(postImage, (err) => {
-    if (err) {
-      console.error("Failed to delete local file:", err);
-    } else {
-      console.log("Successfully deleted local file");
-    }
-  });
-}
+  if (postImage && !postImage.includes("defaultavatar.jpg")) {
+    fs.unlink(postImage, (err) => {
+      if (err) {
+        console.error("Failed to delete local file:", err);
+      } else {
+        console.log("Successfully deleted local file");
+      }
+    });
+  }
 
   return {
     public_id: result.public_id,
@@ -36,13 +36,15 @@ exports.uploadMultiple = async (postImages, folderName) => {
       url: result.secure_url,
     });
 
-    fs.unlink(image, (err) => {
-      if (err) {
-        console.error("Failed to delete local file:", err);
-      } else {
-        console.log("Successfully deleted local file");
-      }
-    });
+    if (postImage && !postImage.includes("defaultavatar.jpg")) {
+      fs.unlink(postImage, (err) => {
+        if (err) {
+          console.error("Failed to delete local file:", err);
+        } else {
+          console.log("Successfully deleted local file");
+        }
+      });
+    }
   }
 
   return images;

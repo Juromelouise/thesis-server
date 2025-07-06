@@ -140,6 +140,9 @@ exports.getAllDataApproved = async (req, res) => {
                 $and: [
                   { $ne: ["$$detail.status", "Declined"] },
                   { $ne: ["$$detail.status", "Pending"] },
+                  { $ne: ["$$detail.status", "Deleted"] },
+                  { $ne: ["$$detail.status", "Ongoing Investigation"] },
+                  { $ne: ["$$detail.status", "Reviewed for Proper Action"] },
                 ],
               },
             },

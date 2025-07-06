@@ -23,9 +23,14 @@ exports.isAuthenticated = async (req, res, next) => {
 };
 
 exports.Admin = async (req, res, next) => {
-  if (req.user.role === "user") {
-    return res.status(403).json({ message: "Access denied" });
-  }
+  try {
+    if (req.user.role === "user") {
+      return res.status(403).json({ message: "Access denied" });
+    }
 
-  next();
+    next();
+  } catch (error) {
+    console.error("Error in Admin middleware: ", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
 };
