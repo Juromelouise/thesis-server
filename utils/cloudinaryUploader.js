@@ -36,15 +36,15 @@ exports.uploadMultiple = async (postImages, folderName) => {
       url: result.secure_url,
     });
 
-    if (postImage && !postImage.includes("defaultavatar.jpg")) {
-      fs.unlink(postImage, (err) => {
-        if (err) {
-          console.error("Failed to delete local file:", err);
-        } else {
-          console.log("Successfully deleted local file");
-        }
-      });
-    }
+    // if (postImages && !postImages.includes("defaultavatar.jpg")) {
+    //   fs.unlink(postImages, (err) => {
+    //     if (err) {
+    //       console.error("Failed to delete local file:", err);
+    //     } else {
+    //       console.log("Successfully deleted local file");
+    //     }
+    //   });
+    // }
   }
 
   return images;

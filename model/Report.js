@@ -134,54 +134,6 @@ reportSchema.methods.remove = async function (next) {
   }
 };
 
-reportSchema.statics.getResolvedCasesPerMonth = async function () {
-  try {
-    const result = await this.aggregate([
-      {
-        $match: {
-          status: "Resolved",
-          "geocode.latitude": { $ne: null },
-          "geocode.longitude": { $ne: null },
-        },
-      },
-      {
-        $addFields: {
-          month: { $month: "$createdAt" },
-          year: { $year: "$createdAt" },
-        },
-      },
-      {
-        $group: {
-          _id: {
-            month: "$month",
-            year: "$year",
-            lat: "$geocode.latitude",
-            lng: "$geocode.longitude",
-            location: "$location",
-          },
-          count: { $sum: 1 },
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          month: "$_id.month",
-          year: "$_id.year",
-          lat: "$_id.lat",
-          lng: "$_id.lng",
-          location: "$_id.location",
-          count: 1,
-        },
-      },
-      {
-        $sort: { year: 1, month: 1, count: -1 },
-      },
-    ]);
-    return result;
-  } catch (err) {
-    throw new Error("Error fetching resolved cases per month: " + err.message);
-  }
-};
 reportSchema.plugin(populate);
 reportSchema.plugin(mongooseDelete, { overrideMethods: "all" });
 

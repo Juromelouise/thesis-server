@@ -43,9 +43,16 @@ exports.getData = async (req, res) => {
 exports.getAllData = async (req, res) => {
   try {
     const { page = 1, limit = 10 } = req.query;
-    const reports = await Report.find({ postIt: true })
-      .skip((page - 1) * limit)
-      .limit(Number(limit));
+    
+    const reports = await Report.find({
+      postIt: true,
+      status: { 
+        $nin: ["Deleted", "Resolved", "Declined"] 
+      }
+    })
+    .sort({ createdAt: -1 })
+    .skip((page - 1) * limit)
+    .limit(Number(limit));
 
     const filteredReports = reports.map((report) => {
       const reportObject = report.toObject();
@@ -55,12 +62,21 @@ exports.getAllData = async (req, res) => {
 
     const obstructions = await Obstruction.find({
       postIt: true,
+      status: { 
+        $nin: ["Deleted", "Resolved", "Declined"] 
+      }
     })
-      .skip((page - 1) * limit)
-      .limit(Number(limit));
+    .sort({ createdAt: -1 }) // Added sorting by newest first
+    .skip((page - 1) * limit)
+    .limit(Number(limit));
 
     const data = [...filteredReports, ...obstructions];
-    res.status(200).json({ data: data });
+    res.status(200).json({ 
+      data: data,
+      page: Number(page),
+      limit: Number(limit),
+      total: data.length 
+    });
   } catch (e) {
     console.log(e.message);
     res.status(500).json({ message: "Error on Fetching All Report Data" });

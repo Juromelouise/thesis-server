@@ -16,8 +16,6 @@ exports.createAnnouncement = async (req, res) => {
 
     const users = await User.find({ pushToken: { $ne: null } });
 
-    console.log(users);
-
       const notificationData = {
       title: data.title,
       message: data.description,

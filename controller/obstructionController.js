@@ -76,14 +76,34 @@ exports.updateObstruction = async (req, res) => {
     if (req.files?.length > 0) {
       images = await uploadMultiple(req.files, "ObstructionImages");
     }
-    const obstruction = await Obstruction.findByIdAndUpdate(
-      req.params.id,
-      { location, description, original, violations, images },
-      {
-        new: true,
-        runValidators: true,
-      }
-    );
+
+    const street = await Street.findOne({ streetName: location });
+    const geocode = {
+      latitude: street.coordinates[0].lat,
+      longitude: street.coordinates[0].lng,
+    };
+
+    let obstruction;
+
+    if (!req.files || req.files.length < 3) {
+      obstruction = await Obstruction.findByIdAndUpdate(
+        req.params.id,
+        { location, description, original, violations, geocode },
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
+    } else {
+      obstruction = await Obstruction.findByIdAndUpdate(
+        req.params.id,
+        { location, description, original, violations, geocode, images },
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
+    }
 
     const data = {
       title: "Report Updated",
@@ -92,7 +112,7 @@ exports.updateObstruction = async (req, res) => {
     };
 
     await pushNotification(data, req.user.pushToken);
-    
+
     res
       .status(201)
       .json({ message: "Obstruction is Updated", obstruction: obstruction });

@@ -62,6 +62,7 @@ const blurImages = async (files) => {
   }
 };
 
+
 exports.createReport = async (req, res) => {
   console.log("Creating report with body");
   try {
@@ -69,8 +70,15 @@ exports.createReport = async (req, res) => {
     const reporter = req.user.id;
     req.body.original = req.body.description.original;
     req.body.description = req.body.description.translation;
-    const { location, description, original, plateNumber, violations, postIt, details } =
-      req.body;
+    const {
+      location,
+      description,
+      original,
+      plateNumber,
+      violations,
+      postIt,
+      details,
+    } = req.body;
 
     const blurredImages = await blurImages(req.files);
 
@@ -82,26 +90,6 @@ exports.createReport = async (req, res) => {
       latitude: street.coordinates[0].lat,
       longitude: street.coordinates[0].lng,
     };
-
-    // if (!parsedGeocode) {
-    //   geocodeCoor = await geocodeFomatter(location);
-    //   if (geocodeCoor) {
-    //     geocode = {
-    //       latitude: geocodeCoor[0].latitude,
-    //       longitude: geocodeCoor[0].longitude,
-    //     };
-    //   } else {
-    //     geocode = {
-    //       latitude: null,
-    //       longitude: null,
-    //     };
-    //   }
-    // } else {
-    //   geocode = {
-    //     latitude: parsedGeocode.latitude,
-    //     longitude: parsedGeocode.longitude,
-    //   };
-    // }
 
     const report = await Report.create({
       location,
@@ -184,6 +172,12 @@ exports.updateReport = async (req, res) => {
       imagesAdmin = await uploadMultiple(req.files, "ReportImages");
     }
 
+    const street = await Street.findOne({ streetName: location });
+    const geocode = {
+      latitude: street.coordinates[0].lat,
+      longitude: street.coordinates[0].lng,
+    };
+
     const report = await Report.findById(req.params.id);
 
     if (!report) {
@@ -201,11 +195,15 @@ exports.updateReport = async (req, res) => {
       });
     }
 
+    if (req.files?.length > 0) {
+      report.images = images;
+    }
+
     report.location = location;
     report.description = description;
     report.original = original;
-    report.images = images;
     report.imagesAdmin = imagesAdmin;
+    report.geocode = geocode;
     report.postIt = postIt;
 
     if (plateNumber) {
