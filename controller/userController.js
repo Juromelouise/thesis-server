@@ -59,7 +59,6 @@ exports.profile = async (req, res) => {
     const data2 = reportPostCount + obstructionPostCount;
 
 
-    console.log("Report Count: ", report1);
     res.status(200).json({
       success: true,
       user,

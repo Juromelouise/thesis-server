@@ -62,7 +62,6 @@ const blurImages = async (files) => {
   }
 };
 
-
 exports.createReport = async (req, res) => {
   console.log("Creating report with body");
   try {
@@ -78,6 +77,7 @@ exports.createReport = async (req, res) => {
       violations,
       postIt,
       details,
+      geocode,
     } = req.body;
 
     const blurredImages = await blurImages(req.files);
@@ -85,11 +85,7 @@ exports.createReport = async (req, res) => {
     const images = await uploadMultiple(blurredImages, "ReportImages/Blurred");
     const imagesAdmin = await uploadMultiple(req.files, "ReportImages");
 
-    const street = await Street.findOne({ streetName: location });
-    const geocode = {
-      latitude: street.coordinates[0].lat,
-      longitude: street.coordinates[0].lng,
-    };
+    const parsedGeocode = JSON.parse(geocode);
 
     const report = await Report.create({
       location,
@@ -99,7 +95,7 @@ exports.createReport = async (req, res) => {
       original,
       reporter,
       postIt,
-      geocode,
+      geocode: parsedGeocode,
       details,
       plateNumber: null,
     });
@@ -161,8 +157,15 @@ exports.updateReport = async (req, res) => {
     let plate;
     req.body.original = req.body.description.original;
     req.body.description = req.body.description.translation;
-    const { location, description, original, plateNumber, violations, postIt } =
-      req.body;
+    const {
+      location,
+      description,
+      original,
+      plateNumber,
+      violations,
+      postIt,
+      geocode,
+    } = req.body;
 
     let images = [];
     let imagesAdmin = [];
@@ -172,11 +175,7 @@ exports.updateReport = async (req, res) => {
       imagesAdmin = await uploadMultiple(req.files, "ReportImages");
     }
 
-    const street = await Street.findOne({ streetName: location });
-    const geocode = {
-      latitude: street.coordinates[0].lat,
-      longitude: street.coordinates[0].lng,
-    };
+    const parsedGeocode = JSON.parse(geocode);
 
     const report = await Report.findById(req.params.id);
 
@@ -203,7 +202,7 @@ exports.updateReport = async (req, res) => {
     report.description = description;
     report.original = original;
     report.imagesAdmin = imagesAdmin;
-    report.geocode = geocode;
+    report.geocode = parsedGeocode;
     report.postIt = postIt;
 
     if (plateNumber) {

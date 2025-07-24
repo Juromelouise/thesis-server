@@ -10,35 +10,11 @@ exports.createObstruction = async (req, res) => {
     const reporter = req.user.id;
     req.body.original = req.body.description.original;
     req.body.description = req.body.description.translation;
-    const { location, description, original, violations, postIt } = req.body;
+    const { location, description, original, violations, postIt, geocode } =
+      req.body;
     const images = await uploadMultiple(req.files, "ObstructionImages");
 
-    const street = await Street.findOne({ streetName: location });
-    const geocode = {
-      latitude: street.coordinates[0].lat,
-      longitude: street.coordinates[0].lng,
-    };
-
-    // const parsedGeocode = JSON.parse(geocodeData);
-    // if (!parsedGeocode) {
-    //   geocodeCoor = await geocodeFomatter(location);
-    //   if (geocodeCoor) {
-    //     geocode = {
-    //       latitude: geocodeCoor[0].latitude,
-    //       longitude: geocodeCoor[0].longitude,
-    //     };
-    //   } else {
-    //     geocode = {
-    //       latitude: null,
-    //       longitude: null,
-    //     };
-    //   }
-    // }else{
-    //   geocode = {
-    //     latitude: parsedGeocode.latitude,
-    //     longitude: parsedGeocode.longitude,
-    //   };
-    // }
+    const parsedGeocode = JSON.parse(geocode);
 
     const obstruction = await Obstruction.create({
       location,
@@ -47,7 +23,7 @@ exports.createObstruction = async (req, res) => {
       original,
       reporter,
       postIt,
-      geocode,
+      geocode: parsedGeocode,
       violations,
     });
 
@@ -71,17 +47,13 @@ exports.updateObstruction = async (req, res) => {
   try {
     req.body.original = req.body.description.original;
     req.body.description = req.body.description.translation;
-    const { location, description, original, violations } = req.body;
+    const { location, description, original, violations, geocode } = req.body;
     let images = [];
     if (req.files?.length > 0) {
       images = await uploadMultiple(req.files, "ObstructionImages");
     }
 
-    const street = await Street.findOne({ streetName: location });
-    const geocode = {
-      latitude: street.coordinates[0].lat,
-      longitude: street.coordinates[0].lng,
-    };
+    const parsedGeocode = JSON.parse(geocode);
 
     let obstruction;
 
@@ -97,7 +69,14 @@ exports.updateObstruction = async (req, res) => {
     } else {
       obstruction = await Obstruction.findByIdAndUpdate(
         req.params.id,
-        { location, description, original, violations, geocode, images },
+        {
+          location,
+          description,
+          original,
+          violations,
+          geocode: parsedGeocode,
+          images,
+        },
         {
           new: true,
           runValidators: true,
