@@ -20,6 +20,9 @@ const reportSchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
+  exactLocation: {
+    type: String,
+  },
   geocode: {
     latitude: {
       type: Number,

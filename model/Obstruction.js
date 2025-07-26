@@ -14,6 +14,9 @@ const obstructionSchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
+  exactLocation: {
+    type: String,
+  },
   geocode: {
     latitude: {
       type: Number,
@@ -89,7 +92,6 @@ const obstructionSchema = new mongoose.Schema({
     default: Date.now,
   },
 });
-
 
 obstructionSchema.plugin(populate);
 obstructionSchema.plugin(mongooseDelete, { overrideMethods: "all" });
