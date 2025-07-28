@@ -1,37 +1,83 @@
 const Report = require("../model/Report");
 const Obstruction = require("../model/Obstruction");
 const axios = require("axios");
-const NodeCache = require("node-cache");
-const geoCache = new NodeCache({ stdTTL: 86400 });
 
 const nominatimClient = axios.create({
-  baseURL: 'https://nominatim.openstreetmap.org',
+  baseURL: "https://nominatim.openstreetmap.org",
   headers: {
-    'User-Agent': 'BOVO/1.0 (juromefernando@gmail.com)',
-    'Referer': 'https://client-thesis.vercel.app'
+    "User-Agent": "BOVO/1.0 (juromefernando@gmail.com)",
+    Referer: "https://client-thesis.vercel.app",
   },
-  timeout: 10000
+  timeout: 10000,
 });
 
 // Configure axios instance for Overpass
 const overpassClient = axios.create({
-  baseURL: 'https://overpass-api.de/api/interpreter',
-  timeout: 30000
+  baseURL: "https://overpass-api.de/api/interpreter",
+  timeout: 30000,
 });
 
-async function getStreetGeometry(streetName) {
+async function getStreetGeometry(streetName, referenceLat, referenceLon) {
   try {
-    const response = await overpassClient.get(
-      `?data=[out:json][timeout:30];
-      area[name="Taguig"]->.city;
-      way(area.city)["name"="${streetName}"]["highway"](around:1000,14.5095,121.0380);
-      out geom;`
-    );
+    console.log("Fetching street geometry for:", streetName, "at", referenceLat, referenceLon);
+    let query;
+    
+    // Only use bbox filtering if we have valid reference coordinates
+    if (referenceLat && referenceLon && 
+        !isNaN(referenceLat) && !isNaN(referenceLon) &&
+        Math.abs(referenceLat) <= 90 && Math.abs(referenceLon) <= 180) {
+
+      query = `[out:json][timeout:30];
+        area["name"="Western Bicutan"]["admin_level"="10"]->.searchArea;
+        (
+          way["highway"]["name"~"^${streetName}$", i](area.searchArea)(around:100,${referenceLat},${referenceLon});
+        );
+        out geom;`;
+    } else {
+      // Fallback query without bbox filtering
+      query = `[out:json][timeout:30];
+        area["name"="Western Bicutan"]["admin_level"="10"]->.searchArea;
+        (
+          way["highway"]["name"~"^${streetName}$", i](area.searchArea);
+        );
+        out geom;`;
+    }
+
+    // Properly encode the query for URL
+    const encodedQuery = encodeURIComponent(query.replace(/\n/g, '').replace(/\s+/g, ' ').trim());
+    const response = await overpassClient.get(`?data=${encodedQuery}`);
 
     const ways = response.data.elements.filter((el) => el.type === "way");
-    if (ways.length === 0) return null;
+    
+    // If we have reference coordinates and multiple ways, find the closest one
+    if (referenceLat && referenceLon && ways.length > 1) {
+      let minDistance = Infinity;
+      let selectedWay = ways[0];
+      
+      ways.forEach(way => {
+        way.geometry.forEach(point => {
+          const distance = Math.sqrt(
+            Math.pow(point.lat - referenceLat, 2) + 
+            Math.pow(point.lon - referenceLon, 2)
+          );
+          if (distance < minDistance) {
+            minDistance = distance;
+            selectedWay = way;
+          }
+        });
+      });
 
-    const coordinates = ways[0].geometry.map(point => [point.lon, point.lat]);
+      const coordinates = selectedWay.geometry.map((point) => [point.lon, point.lat]);
+      return {
+        type: "LineString",
+        coordinates: coordinates,
+      };
+    }
+
+    // Default case - return first way or null if none found
+    if (ways.length === 0) return null;
+    
+    const coordinates = ways[0].geometry.map((point) => [point.lon, point.lat]);
     return {
       type: "LineString",
       coordinates: coordinates,
@@ -41,30 +87,39 @@ async function getStreetGeometry(streetName) {
     return null;
   }
 }
-
 async function getStreetData(latitude, longitude) {
   try {
     // Add delay to respect rate limits (max 1 request per second)
-    await new Promise(resolve => setTimeout(resolve, 1100));
-    
+    await new Promise((resolve) => setTimeout(resolve, 1100));
+
     const response = await nominatimClient.get(
       `/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`
     );
 
     const address = response.data.address;
-    const streetName = address.road || address.pedestrian || address.footway || "Unnamed Road";
+    console.log("Fetched address:", address);
+    const streetName =
+      address.road || address.pedestrian || address.footway || "Unnamed Road";
 
     // Add another delay between requests
-    await new Promise(resolve => setTimeout(resolve, 1100));
-    
+    await new Promise((resolve) => setTimeout(resolve, 1100));
+
     const [streetGeocode, streetGeometry] = await Promise.all([
-      nominatimClient.get(
-        `/search?q=${encodeURIComponent(streetName + ", Western Bicutan, Taguig")}&format=json&addressdetails=1&limit=1`
-      ).then(res => res.data[0] ? {
-        latitude: parseFloat(res.data[0].lat),
-        longitude: parseFloat(res.data[0].lon),
-      } : null),
-      getStreetGeometry(streetName)
+      nominatimClient
+        .get(
+          `/search?q=${encodeURIComponent(
+            streetName + ", Western Bicutan, Taguig"
+          )}&format=json&addressdetails=1&limit=1`
+        )
+        .then((res) =>
+          res.data[0]
+            ? {
+                latitude: parseFloat(res.data[0].lat),
+                longitude: parseFloat(res.data[0].lon),
+              }
+            : null
+        ),
+      getStreetGeometry(streetName, latitude, longitude),
     ]);
 
     return {
@@ -237,7 +292,6 @@ exports.getCoordinates = async (req, res) => {
 
 exports.streetOccupiedMost = async (req, res) => {
   try {
-    const batchSize = 10; // Process 10 documents at a time
     const reports = await Report.find({
       "geocode.latitude": { $exists: true, $ne: null },
       "geocode.longitude": { $exists: true, $ne: null },
@@ -252,45 +306,61 @@ exports.streetOccupiedMost = async (req, res) => {
     const streetCounts = {};
     const streetDetails = {};
 
-    // Process in batches to avoid overwhelming the API
+    // Process documents in batches to avoid overwhelming the API
+    const batchSize = 3;
     for (let i = 0; i < allDocuments.length; i += batchSize) {
       const batch = allDocuments.slice(i, i + batchSize);
-      await Promise.all(
-        batch.map(async (doc) => {
-          const { latitude, longitude } = doc.geocode;
-          const { streetName, streetGeocode, streetGeometry } =
-            await getStreetData(latitude, longitude);
+      
+      await Promise.all(batch.map(async (doc) => {
+        const { latitude, longitude } = doc.geocode;
+        let streetName, streetGeometry;
 
-          if (!streetGeocode || !streetGeometry) return;
-
-          if (!streetCounts[streetName]) {
-            streetCounts[streetName] = 0;
-            streetDetails[streetName] = {
-              pointLocation: streetGeocode,
-              geometry: streetGeometry,
-              reports: 0,
-              obstructions: 0,
-            };
+        // For reports, use the stored location field
+        if (doc.__t === "Report" || doc.plateNumber) {
+          streetName = doc.location;
+          console.log("Using stored location for report:", streetName);
+          // Only fetch geometry if we don't already have it for this street
+          if (!streetDetails[streetName]?.geometry) {
+            streetGeometry = await getStreetGeometry(streetName, latitude, longitude);
           }
+        } 
+        // For obstructions, use the API to get street name and geometry
+        else {
+          const streetData = await getStreetData(latitude, longitude);
+          streetName = streetData.streetName;
+          streetGeometry = streetData.streetGeometry;
+        }
 
-          streetCounts[streetName]++;
-          if (doc.__t === "Report" || doc.plateNumber) {
-            streetDetails[streetName].reports++;
-          } else {
-            streetDetails[streetName].obstructions++;
-          }
-        })
-      );
+        if (!streetName) return;
 
-      // Add delay between batches
+        // Initialize street entry if it doesn't exist
+        if (!streetCounts[streetName]) {
+          streetCounts[streetName] = 0;
+          streetDetails[streetName] = {
+            reports: 0,
+            obstructions: 0,
+            geometry: streetDetails[streetName]?.geometry || streetGeometry,
+            pointLocation: { latitude, longitude },
+          };
+        }
+
+        streetCounts[streetName]++;
+        if (doc.__t === "Report" || doc.plateNumber) {
+          streetDetails[streetName].reports++;
+        } else {
+          streetDetails[streetName].obstructions++;
+        }
+      }));
+
+      // Add delay between batches to respect API rate limits
       if (i + batchSize < allDocuments.length) {
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 2000));
       }
     }
 
     const result = Object.keys(streetCounts)
-      .filter((streetName) => streetDetails[streetName])
-      .map((streetName) => ({
+      .filter(streetName => streetDetails[streetName])
+      .map(streetName => ({
         streetName,
         totalCases: streetCounts[streetName],
         reports: streetDetails[streetName].reports,
