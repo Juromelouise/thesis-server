@@ -78,6 +78,7 @@ exports.createReport = async (req, res) => {
       postIt,
       details,
       geocode,
+      exactLocation,
     } = req.body;
 
     const blurredImages = await blurImages(req.files);
@@ -98,6 +99,7 @@ exports.createReport = async (req, res) => {
       geocode: parsedGeocode,
       details,
       plateNumber: null,
+      exactLocation,
     });
 
     if (plateNumber) {

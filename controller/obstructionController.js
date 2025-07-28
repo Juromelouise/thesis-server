@@ -10,7 +10,7 @@ exports.createObstruction = async (req, res) => {
     const reporter = req.user.id;
     req.body.original = req.body.description.original;
     req.body.description = req.body.description.translation;
-    const { location, description, original, violations, postIt, geocode } =
+    const { location, description, original, violations, postIt, geocode, exactLocation } =
       req.body;
     const images = await uploadMultiple(req.files, "ObstructionImages");
 
@@ -25,6 +25,7 @@ exports.createObstruction = async (req, res) => {
       postIt,
       geocode: parsedGeocode,
       violations,
+      exactLocation,
     });
 
     const data = {
