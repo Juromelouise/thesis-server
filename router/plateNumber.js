@@ -4,6 +4,7 @@ const {
   changeViolation,
   getAllPlateNumbers,
   getPlateNumber,
+  updateNoticeNumber,
 } = require("../controller/plateNumber");
 const { isAuthenticated, Admin } = require("../middleware/auth");
 
@@ -13,17 +14,13 @@ router.put(
   Admin,
   changeViolation
 );
+router.get("/admin/platenumbers", isAuthenticated, Admin, getAllPlateNumbers);
+router.get("/admin/platenumbers/:id", isAuthenticated, Admin, getPlateNumber);
 router.get(
-  "/admin/platenumbers",
+  "/admin/platenumbers/update-notice-number/:id",
   isAuthenticated,
   Admin,
-  getAllPlateNumbers
-);
-router.get(
-  "/admin/platenumbers/:id",
-  isAuthenticated,
-  Admin,
-  getPlateNumber
+  updateNoticeNumber
 );
 
 module.exports = router;

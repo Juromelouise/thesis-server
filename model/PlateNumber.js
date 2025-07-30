@@ -30,6 +30,10 @@ const plateNumberSchema = new mongoose.Schema({
     type: Number,
     default: 1,
   },
+  noticeNumber: {
+    type: Number,
+    default: 0,
+  },
   offense: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Offense",

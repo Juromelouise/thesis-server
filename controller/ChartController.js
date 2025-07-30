@@ -145,3 +145,224 @@ exports.getReportTypes = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+exports.getYearlyViolations = async (req, res) => {
+  try {
+    const [reports, obstructions] = await Promise.all([
+      Report.aggregate([
+        {
+          $group: {
+            _id: { $year: "$createdAt" },
+            reportCount: { $sum: 1 },
+          },
+        },
+        { $sort: { _id: 1 } },
+      ]),
+      Obstruction.aggregate([
+        {
+          $group: {
+            _id: { $year: "$createdAt" },
+            obstructionCount: { $sum: 1 },
+          },
+        },
+        { $sort: { _id: 1 } },
+      ]),
+    ]);
+
+    const years = [
+      ...new Set([
+        ...reports.map((r) => r._id),
+        ...obstructions.map((o) => o._id),
+      ]),
+    ].sort();
+
+    const data = years.map((year) => {
+      const report = reports.find((r) => r._id === year) || { reportCount: 0 };
+      const obstruction = obstructions.find((o) => o._id === year) || {
+        obstructionCount: 0,
+      };
+
+      return {
+        year,
+        reportCount: report.reportCount,
+        obstructionCount: obstruction.obstructionCount,
+        total: report.reportCount + obstruction.obstructionCount,
+      };
+    });
+
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getQuarterlyViolations = async (req, res) => {
+  try {
+    const { year } = req.query;
+    const match = {};
+    if (year) {
+      match.createdAt = {
+        $gte: new Date(`${year}-01-01`),
+        $lt: new Date(`${parseInt(year) + 1}-01-01`),
+      };
+    }
+
+    const [reports, obstructions] = await Promise.all([
+      Report.aggregate([
+        {
+          $match: match
+        },
+        {
+          $group: {
+            _id: {
+              quarter: {
+                $ceil: { $divide: [{ $month: "$createdAt" }, 3] }
+              },
+              year: { $year: "$createdAt" }
+            },
+            reportCount: { $sum: 1 },
+          },
+        },
+        { $sort: { "_id.year": 1, "_id.quarter": 1 } },
+      ]),
+      Obstruction.aggregate([
+        {
+          $match: match
+        },
+        {
+          $group: {
+            _id: {
+              quarter: {
+                $ceil: { $divide: [{ $month: "$createdAt" }, 3] }
+              },
+              year: { $year: "$createdAt" }
+            },
+            obstructionCount: { $sum: 1 },
+          },
+        },
+        { $sort: { "_id.year": 1, "_id.quarter": 1 } },
+      ]),
+    ]);
+
+    const quarters = [1, 2, 3, 4];
+    const data = reports.map(report => {
+      const obstruction = obstructions.find(o => 
+        o._id.quarter === report._id.quarter && 
+        o._id.year === report._id.year
+      ) || { obstructionCount: 0 };
+      
+      return {
+        quarter: report._id.quarter,
+        year: report._id.year,
+        reportCount: report.reportCount,
+        obstructionCount: obstruction.obstructionCount,
+        total: report.reportCount + obstruction.obstructionCount
+      };
+    });
+
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getAllViolations = async (req, res) => {
+  try {
+    const [reports, obstructions] = await Promise.all([
+      Report.aggregate([
+        {
+          $group: {
+            _id: {
+              year: { $year: "$createdAt" },
+              month: { $month: "$createdAt" },
+            },
+            reportCount: { $sum: 1 },
+          },
+        },
+        { $sort: { "_id.year": 1, "_id.month": 1 } },
+      ]),
+      Obstruction.aggregate([
+        {
+          $group: {
+            _id: {
+              year: { $year: "$createdAt" },
+              month: { $month: "$createdAt" },
+            },
+            obstructionCount: { $sum: 1 },
+          },
+        },
+        { $sort: { "_id.year": 1, "_id.month": 1 } },
+      ]),
+    ]);
+
+    const periods = [
+      ...new Set([
+        ...reports.map((r) => `${r._id.year}-${r._id.month}`),
+        ...obstructions.map((o) => `${o._id.year}-${o._id.month}`),
+      ]),
+    ].sort();
+
+    const data = periods.map((period) => {
+      const [year, month] = period.split("-").map(Number);
+      const report = reports.find(
+        (r) => r._id.year === year && r._id.month === month
+      ) || { reportCount: 0 };
+      const obstruction = obstructions.find(
+        (o) => o._id.year === year && o._id.month === month
+      ) || { obstructionCount: 0 };
+
+      return {
+        year,
+        month,
+        reportCount: report.reportCount,
+        obstructionCount: obstruction.obstructionCount,
+        total: report.reportCount + obstruction.obstructionCount,
+      };
+    });
+
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getAvailableYears = async (req, res) => {
+  try {
+    const reportYears = await Report.aggregate([
+      {
+        $group: {
+          _id: { $year: "$createdAt" }
+        }
+      },
+      {
+        $project: {
+          year: "$_id"
+        }
+      }
+    ]);
+    
+    const obstructionYears = await Obstruction.aggregate([
+      {
+        $group: {
+          _id: { $year: "$createdAt" }
+        }
+      },
+      {
+        $project: {
+          year: "$_id"
+        }
+      }
+    ]);
+
+    const years = [
+      ...new Set([
+        ...reportYears.map((item) => item.year),
+        ...obstructionYears.map((item) => item.year),
+      ]),
+    ].sort((a, b) => b - a);
+
+    res.json(years);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};

@@ -7,9 +7,7 @@ const FormData = require("form-data");
 const fs = require("fs").promises;
 const path = require("path");
 const { pushNotification } = require("../utils/Notification");
-const { geocodeFomatter } = require("../service/geocoder");
 const Obstruction = require("../model/Obstruction");
-const Street = require("../model/Street");
 
 const ensureTempDirectoryExists = async () => {
   const tempDir = path.join(__dirname, "../temp");

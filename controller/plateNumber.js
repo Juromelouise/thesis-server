@@ -41,28 +41,43 @@ exports.getAllPlateNumbers = async (req, res) => {
 
 exports.getPlateNumber = async (req, res) => {
   try {
-const data = await plateNumber.findById(req.params.id).populate([
-  {
-    path: 'violations.report',
-    select: 'status'
-  },
-  {
-    path: 'offense',
-  }
-]).lean();
+    const data = await plateNumber
+      .findById(req.params.id)
+      .populate([
+        {
+          path: "violations.report",
+          select: "status exactLocation",
+        },
+        {
+          path: "offense",
+        },
+      ])
+      .lean();
 
-    console.log("Plate Number Data:", data);
-
-    data.violations = data.violations.map(violation => ({
+    data.violations = data.violations.map((violation) => ({
       ...violation,
       status: violation.report.status,
       id: violation.report._id,
-      report: undefined
+      exactLocation: violation.report.exactLocation,
     }));
 
     res.status(200).json({ data });
   } catch (error) {
     console.error("Error getting plate number:", error);
     res.status(500).json({ message: "Failed to get plate number." });
+  }
+};
+
+exports.updateNoticeNumber = async (req, res) => {
+  try {
+    const plate = await plateNumber.findByIdAndUpdate(
+      req.params.id,
+      { $inc: { noticeNumber: 1 } },
+      { new: true }
+    );
+    res.status(200).json({ report: plate });
+  } catch (error) {
+    console.error("Error updating notice number:", error);
+    res.status(500).json({ message: "Failed to update notice number." });
   }
 };

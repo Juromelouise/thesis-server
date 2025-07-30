@@ -45,28 +45,34 @@ exports.profile = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
     const reportCount = await Report.countDocuments({ reporter: req.user.id });
-    const obstructionCount = await Obstruct.countDocuments({ reporter: req.user.id });
+    const obstructionCount = await Obstruct.countDocuments({
+      reporter: req.user.id,
+    });
 
-    const report1 = await Report.find({ reporter: req.user.id })
-    const obstruction = await Obstruct.find({ reporter: req.user.id})
+    const report1 = await Report.find({ reporter: req.user.id });
+    const obstruction = await Obstruct.find({ reporter: req.user.id });
 
-    const reportPostCount = await Report.countDocuments({ reporter: req.user.id, postIt: true });
-    const obstructionPostCount = await Obstruct.countDocuments({ reporter: req.user.id, postIt: true});
+    const reportPostCount = await Report.countDocuments({
+      reporter: req.user.id,
+      postIt: true,
+    });
+    const obstructionPostCount = await Obstruct.countDocuments({
+      reporter: req.user.id,
+      postIt: true,
+    });
 
     const report = [...report1, ...obstruction];
 
     const data = reportCount + obstructionCount;
     const data2 = reportPostCount + obstructionPostCount;
 
-
     res.status(200).json({
       success: true,
       user,
       data,
       data2,
-      report
+      report,
     });
-
   } catch (e) {
     console.error("Error in Getting user: ", e);
     res.status(500).json({ message: "Error in Getting user" });
@@ -243,5 +249,27 @@ exports.changeRole = async (req, res) => {
   } catch (e) {
     console.error("Error in Changing user role: ", e);
     res.status(500).json({ message: "Error in Changing user role" });
+  }
+};
+
+exports.getMultipleUsers = async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ message: "Invalid user IDs provided" });
+    }
+
+    const users = await User.findWithDeleted({ _id: { $in: ids } });
+    if (!users || users.length === 0) {
+      return res.status(404).json({ message: "No users found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      users,
+    });
+  } catch (error) {
+    console.error("Error in getting multiple users:", error);
+    res.status(500).json({ message: "Error in getting multiple users" });
   }
 };
