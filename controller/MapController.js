@@ -19,74 +19,112 @@ const overpassClient = axios.create({
 
 async function getStreetGeometry(streetName, referenceLat, referenceLon) {
   try {
-    console.log("Fetching street geometry for:", streetName, "at", referenceLat, referenceLon);
-    let query;
+    console.log(`Fetching geometry for: ${streetName} at ${referenceLat},${referenceLon}`);
     
-    // Only use bbox filtering if we have valid reference coordinates
+    // Simplify the street name for better matching
+    const simplifiedStreetName = streetName
+      .replace(/\./g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    let query;
+    const bboxSize = 100; // meters around the reference point
+    
     if (referenceLat && referenceLon && 
         !isNaN(referenceLat) && !isNaN(referenceLon) &&
         Math.abs(referenceLat) <= 90 && Math.abs(referenceLon) <= 180) {
-
-      query = `[out:json][timeout:30];
-        area["name"="Western Bicutan"]["admin_level"="10"]->.searchArea;
-        (
-          way["highway"]["name"~"^${streetName}$", i](area.searchArea)(around:100,${referenceLat},${referenceLon});
-        );
-        out geom;`;
-    } else {
-      // Fallback query without bbox filtering
-      query = `[out:json][timeout:30];
-        area["name"="Western Bicutan"]["admin_level"="10"]->.searchArea;
-        (
-          way["highway"]["name"~"^${streetName}$", i](area.searchArea);
-        );
-        out geom;`;
-    }
-
-    // Properly encode the query for URL
-    const encodedQuery = encodeURIComponent(query.replace(/\n/g, '').replace(/\s+/g, ' ').trim());
-    const response = await overpassClient.get(`?data=${encodedQuery}`);
-
-    const ways = response.data.elements.filter((el) => el.type === "way");
-    
-    // If we have reference coordinates and multiple ways, find the closest one
-    if (referenceLat && referenceLon && ways.length > 1) {
-      let minDistance = Infinity;
-      let selectedWay = ways[0];
       
-      ways.forEach(way => {
-        way.geometry.forEach(point => {
-          const distance = Math.sqrt(
-            Math.pow(point.lat - referenceLat, 2) + 
-            Math.pow(point.lon - referenceLon, 2)
-          );
-          if (distance < minDistance) {
-            minDistance = distance;
-            selectedWay = way;
-          }
-        });
-      });
-
-      const coordinates = selectedWay.geometry.map((point) => [point.lon, point.lat]);
-      return {
-        type: "LineString",
-        coordinates: coordinates,
-      };
+      query = `
+        [out:json][timeout:25];
+        (
+          way["highway"]["name"~"^${simplifiedStreetName}$",i](around:${bboxSize},${referenceLat},${referenceLon});
+        );
+        out geom;
+      `;
+    } else {
+      query = `
+        [out:json][timeout:25];
+        area["name"="Western Bicutan"]["admin_level"="10"]->.searchArea;
+        (
+          way["highway"]["name"~"^${simplifiedStreetName}$",i](area.searchArea);
+        );
+        out geom;
+      `;
     }
 
-    // Default case - return first way or null if none found
-    if (ways.length === 0) return null;
+    // Clean and encode the query
+    const cleanQuery = query.replace(/\n/g, '').replace(/\s+/g, ' ').trim();
+    const encodedQuery = encodeURIComponent(cleanQuery);
     
-    const coordinates = ways[0].geometry.map((point) => [point.lon, point.lat]);
-    return {
-      type: "LineString",
-      coordinates: coordinates,
-    };
+    console.log(`Executing Overpass query: ${cleanQuery}`);
+    
+    // Add retry logic with exponential backoff
+    let retries = 3;
+    let lastError;
+    
+    while (retries > 0) {
+      try {
+        const response = await overpassClient.get(`?data=${encodedQuery}`, {
+          timeout: 30000
+        });
+
+        const ways = response.data.elements?.filter(el => el.type === "way") || [];
+        
+        if (ways.length === 0) {
+          console.log(`No ways found for street: ${streetName}`);
+          return null;
+        }
+
+        // Find the way with the most points (likely the main segment)
+        let selectedWay = ways.reduce((longest, way) => 
+          way.geometry?.length > longest.geometry?.length ? way : longest, 
+          ways[0]
+        );
+
+        // If we have reference coordinates, find the closest way
+        if (referenceLat && referenceLon && ways.length > 1) {
+          let minDistance = Infinity;
+          ways.forEach(way => {
+            way.geometry?.forEach(point => {
+              const distance = Math.sqrt(
+                Math.pow(point.lat - referenceLat, 2) + 
+                Math.pow(point.lon - referenceLon, 2)
+              );
+              if (distance < minDistance) {
+                minDistance = distance;
+                selectedWay = way;
+              }
+            });
+          });
+        }
+
+        const coordinates = selectedWay.geometry.map(point => [point.lon, point.lat]);
+        return {
+          type: "LineString",
+          coordinates: coordinates,
+        };
+      } catch (error) {
+        lastError = error;
+        retries--;
+        if (retries > 0) {
+          const delay = Math.pow(2, 3 - retries) * 1000; // Exponential backoff
+          console.log(`Retry attempt ${4-retries} after ${delay}ms`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+    }
+    
+    throw lastError || new Error('Failed after retries');
+    
   } catch (error) {
-    console.error("Error fetching street geometry:", error);
+    console.error(`Error fetching street geometry for ${streetName}:`, error.message);
+    if (error.response) {
+      console.error('Response data:', error.response.data);
+    }
     return null;
   }
 }
+
 async function getStreetData(latitude, longitude) {
   try {
     // Add delay to respect rate limits (max 1 request per second)
@@ -292,15 +330,25 @@ exports.getCoordinates = async (req, res) => {
 
 exports.streetOccupiedMost = async (req, res) => {
   try {
-    const reports = await Report.find({
-      "geocode.latitude": { $exists: true, $ne: null },
-      "geocode.longitude": { $exists: true, $ne: null },
-    }).lean();
+    const { month, year } = req.query;
 
-    const obstructions = await Obstruction.find({
+       const matchQuery = {
       "geocode.latitude": { $exists: true, $ne: null },
       "geocode.longitude": { $exists: true, $ne: null },
-    }).lean();
+    };
+
+    if (month && year) {
+      matchQuery.$expr = {
+        $and: [
+          { $eq: [{ $month: "$createdAt" }, parseInt(month)] },
+          { $eq: [{ $year: "$createdAt" }, parseInt(year)] },
+        ],
+      };
+    }
+
+    const reports = await Report.find(matchQuery).lean();
+    const obstructions = await Obstruction.find(matchQuery).lean();
+    console.log("Fetched reports:", reports.length, "obstructions:", obstructions.length);
 
     const allDocuments = [...reports, ...obstructions];
     const streetCounts = {};
@@ -318,7 +366,6 @@ exports.streetOccupiedMost = async (req, res) => {
         // For reports, use the stored location field
         if (doc.__t === "Report" || doc.plateNumber) {
           streetName = doc.location;
-          console.log("Using stored location for report:", streetName);
           // Only fetch geometry if we don't already have it for this street
           if (!streetDetails[streetName]?.geometry) {
             streetGeometry = await getStreetGeometry(streetName, latitude, longitude);
